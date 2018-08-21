@@ -1,0 +1,2547 @@
+1                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+NOTE: Copyright (c) 2002-2012 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M3) 
+      Licensed to TRUVEN HEALTH ANALYTICS LLC, Site 70017674.
+NOTE: This session is executing on the Linux 2.6.32-573.el6.x86_64 (LIN X64) platform.
+
+
+
+NOTE: Updated analytical products:
+      
+      SAS/STAT 14.1
+
+WARNING: Your system is scheduled to expire on September 13, 2018, which is 23 days from now. The SAS System will no longer 
+         function on or after that date. Please contact your SAS Installation Representative to obtain your updated SAS 
+         Installation Data (SID) file, which includes SETINIT information.
+To locate the name of your SAS Installation Representative go to http://support.sas.com/repfinder and provide your site number 
+70017674 and company name as TRUVEN HEALTH ANALYTICS LLC. On the SAS REP list provided, locate the REP for operating system LIN X64.
+NOTE: Additional host information:
+
+ Linux LIN X64 2.6.32-573.el6.x86_64 #1 SMP Wed Jul 1 18:23:37 EDT 2015 x86_64 Red Hat Enterprise Linux Server release 6.7 
+      (Santiago) 
+
+You are running SAS 9. Some SAS 8 files will be automatically converted 
+by the V9 engine; others are incompatible.  Please see 
+http://support.sas.com/rnd/migration/planning/platform/64bit.html
+
+PROC MIGRATE will preserve current SAS file attributes and is 
+recommended for converting all your SAS libraries from any 
+SAS 8 release to SAS 9.  For details and examples, please see
+http://support.sas.com/rnd/migration/index.html
+
+
+This message is contained in the SAS news file, and is presented upon
+initialization.  Edit the file "news" in the "misc/base" directory to
+display site-specific news and information in the program log.
+The command line option "-nonews" will prevent this display.
+
+
+
+
+NOTE: SAS initialization used:
+      real time           0.17 seconds
+      cpu time            0.02 seconds
+      
+1          ** Opioid Predictive Model for American Express        **;
+2          ** Data Prep for Python                                **;
+3          ** Service Dates: 7.1.15-12.31.2017                    **;
+4          ** trvlapp3131: /home/ace/AMEX_2018/SAS/amex.sas       **;
+5          ** N. Ridenour 07.23.18, modified by Yuchen Li         **;
+6          **  08/15/2018                                         **;
+7          
+8          libname AMEX '/ace/AMEX_2018/Data';
+NOTE: Libref AMEX was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: /ace/AMEX_2018/Data
+9          libname library '/ace/AMEX_2018/SAS/library';
+NOTE: Libref LIBRARY was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: /ace/AMEX_2018/SAS/library
+2                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+10         
+11         
+12         %let hedis_yr = 2017;
+13         
+14         
+15         proc format;
+WARNING: The Base SAS Software product with which FORMAT is associated will be expiring soon, and is currently in warning mode to 
+         indicate this upcoming expiration. Please run PROC SETINIT to obtain more information on your warning period.
+16           value bi 0  = '0'
+17                    .  = 'MD'
+18                 other = '1';
+NOTE: Format BI has been output.
+19           value ten_pct  0-.10499 = '0-10%'
+20                         .105-.20499 = '11-20%'
+21         				.205-.30499 = '21-30%'
+22         				.305-.40499 = '31-40%'
+23         				.405-.50499 = '41-50%'
+24         				.505-.60499 = '51-60%'
+25         				.605-.70499 = '61-70%'
+26         				.705-.80499 = '71-80%'
+27         				.805-.90499 = '81-90%'
+28         				.905-1.0499 = '91-100%'
+29         				1.05-999 = '>100%';
+NOTE: Format TEN_PCT has been output.
+30           value days 1-3  = '1-3'
+31                      4-7  = '4-7'
+32         			 8-13 = '8-13'
+33         			 14-300 = '14+';
+NOTE: Format DAYS has been output.
+34           value vol 1-5 		 = '1-5'
+35                     6-10 		 = '6-10'
+36                     11-20 		 = '1-20'
+37         			21-30 		 = '21-30'
+38         			31-40 		 = '31-40'
+39         			41-50 		 = '41-50'
+40         			51-60 		 = '51-60'
+41         			61-70 		 = '61-70'
+42         			71-80 		 = '71-80'
+43         			81-90 		 = '81-90'
+44         			91-100 		 = '91-100'
+45         			101-200      = '101-200'
+46                     201-140000   = '201+';
+NOTE: Format VOL has been output.
+47           value ratio 0-0.05499     = '0-5%'
+48                       0.055-0.09499 = '6-9%'
+49         			  0.095-0.19499 = '10-19%'
+50         			  0.195-0.29499 = '20-29%'
+51         			  0.295-0.39499 = '30-39%'
+52         			  0.395-0.49499 = '40-49%'
+53         			  0.495-1       = '50-100%';
+NOTE: Format RATIO has been output.
+54           value mpr_fmt 0-1.249 = '0-125%'
+55                         1.25-60 = '>125%';
+NOTE: Format MPR_FMT has been output.
+56         run;
+
+NOTE: PROCEDURE FORMAT used (Total process time):
+      real time           0.05 seconds
+3                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+      cpu time            0.00 seconds
+      
+
+57         
+58         *** Value Sets ***;
+59         ** ICD9 **;
+60         * SUD - non-opioid *;
+61         %let sud9 = ('2910' ,'2911' ,'2912', '2913' ,'2914' ,'2915' ,'29181','29182','29189','2919',
+61       ! '30300','30301','30302','30390',
+62         			 '30391','30392','30410','30411','30412','30420','30421','30422','30430','30431','30432','30440','30441','30442',
+63         			 '30450','30451','30452','30460','30461','30462','30480','30481','30482','30490','30491','30492','30500','30501',
+64         			 '30502','30520','30521','30522','30530','30531','30532','30540','30541','30542','30550','30551','30552','30560',
+65         			 '30561','30562','30570','30571','30572','30580','30581','30582','30590','30591','30592','53530','53531','5711');
+66         
+67         * OUD *;
+68         %let oud9 = ('30400','30401','30402','30470','30471','30472','30550','30551','30552');
+69         
+70         * OUD-remission *;
+71         %let oudr9 = ('30403','30473');
+72         
+73         * Adverse affects *;
+74         %let adv9 = ('E9352');
+75         
+76         * Overdose *;
+77         %let od9 = ('96500','96501','96509','E8500','E8501','E8502','E9500','E9620','E9800');
+78         
+79         * Neonatal Abstinence Syndrome *;
+80         %let nas9 = ('7795');
+81         %let nas_mom9 = ('76072');
+82         
+83         ** ICD10 **;
+84         * SUD - non-opioiod *;
+85         %let sud10 =
+86         ('F1010' ,'F10120','F10121','F10129','F1014' ,'F10150','F10151','F10159','F10180','F10181','F10182','F10188','F1019' ,
+87          'F1020' ,'F10220','10221' ,'F10229','F10230','F10231','F10232','F10239','F1024' ,'F10250','F10251','F10259','F1026' ,
+88          'F1027' ,'F10280','F10281','F10282','F10288','F1029' ,'F1120' ,'F1210' ,'F12120','F12121','F12122','F12129','F12150',
+89          'F12151','F12159','F12180','F12188','F1219' ,'F1220' ,'F12220','F12221','F12222','F12229','F12250','F12251','F12259',
+90          'F12280','F12288','F1229' ,'F1310' ,'F13120','F13121','F13129','F1314' ,'F13150','F13151','F13159','F13180','F13181',
+91          'F13182','F13188','F1319' ,'F1320' ,'F13220','F13221','F13229','F13230','F13231','F13232','F13239','F1324' ,'F13250',
+92          'F13251','F13259','F1326' ,'F1327' ,'F13280','F13281','F13282','F13288','F1329' ,'F1410' ,'F14120','F14121','F14122',
+93          'F14129','F1414' ,'F14150','F14151','F14159','F14180','F14181','F14182','F14188','F1419' ,'F1420' ,'F14220','F14221',
+94          'F14222','F14229','F1423' ,'F1424' ,'F14250','F14251','F14259','F14280','F14281','F14282','F14288','F1429' ,'F1510' ,
+95          'F15120','F15121','F15122','F15129','F1514' ,'F15150','F15151','F15159','F15180','F15181','F15182','F15188','F1519' ,
+96          'F1520' ,'F15220','F15221','F15222','F15229','F1523' ,'F1524' ,'F15250','F15251','F15259','F15280','F15281','F15282',
+97          'F15288','F1529' ,'F1610' ,'F16120','F16121','F16122','F16129','F1614' ,'F16150','F16151','F16159','F16180','F16183',
+98          'F16188','F1619' ,'F1620' ,'F16220','F16221','F16229','F1624' ,'F16250','F16251','F16259','F16280','F16283','F16288',
+99          'F1629' ,'F1810' ,'F18120','F18121','F18129','F1814' ,'F18150','F18151','F18159','F1817' ,'F18180','F18188','F1819' ,
+100         'F1820' ,'F18220','F18221','F18229','F1824' ,'F18250','F18251','F18259','F1827' ,'F18280','F18288','F1829' ,'F1910' ,
+101         'F19120','F19121','F19122','F19129','F1914' ,'F19150','F19151','F19159','F1916' ,'F1917' ,'F19180','F19181','F19182',
+102         'F19188','F1919' ,'F1920' ,'F19220','F19221','F19222','F19229','F19230','F19231','F19232','F19239','F1924' ,'F19250',
+103         'F19251','F19259','F1926' ,'F1927' ,'F19280','F19281','F19282','F19288','F1929');
+104        
+105        * OUD *;
+106        %let oud10 =
+107        ('F1120' ,'F11220','F11221','F11222','F11229','F1123','F1124' ,'F11250','F11251','F11259','F11281','F11282','F11288',
+108         'F1129' ,'F1110' ,'F11120','F11121','F11122','F11129','F1114','F11150','F11151','F11159','F11181','F11182','F11188',
+109         'F1119' ,'F1190' ,'F11920','F11929','F11921','F11922','F1193','F1194' ,'F11950','F11951','F11959','F11981','F11982',
+110         'F11988','F1199' );
+4                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+111        
+112        * Overdose *;
+113        %let od10 =
+113      ! ('T400X1A','T400X1D','T400X1S','T400X2A','T400X2D','T400X2S','T400X3A','T400X3D','T400X3S','T400X4A','T400X4D',
+114        			 'T400X4S','T401X1A','T401X1D','T401X1S','T401X2A','T401X2D','T401X2S','T401X3A','T401X3D','T401X3S','T401X4A',
+115        			 'T401X4D','T401X4S','T402X1A','T402X1D','T402X1S','T402X2A','T402X2D','T402X2S','T402X3A','T402X3D','T402X3S',
+116        			 'T402X4A','T402X4D','T402X4S');
+117        
+118        * Remission *;
+119        %let oudr10 = ('F1121');
+120        
+121        * Adverse Effects *;
+122        %let adv10 = ('T400X5A','T400X5D','T400X5S','T402X5A','T402X5D','T402X5S');
+123        
+124        * Underdosing *;
+125        %let ud10 = ('T400X6A','T400X6D','T400X6S','T402X6A','T402X6D','T402X6S');
+126        
+127        * Neonatal Abstinence Syndrome *;
+128        %let nas10 = ('P961','P962');
+129        %let nas_mom10=('P0449');
+130        
+131        ** CPT/HCPCS **;
+132        * Hospice *;
+133        %let excl_hospice_c =
+134        ('99377','99378','G0182','G9473','G9474','G9475','G9476','G9477','G9478','G9479','Q5003','Q5004','Q5005',
+135         'Q5006','Q5007','Q5008','Q5010','S9126','T2042','T2043','T2044','T2045','T2046');
+136        
+137        ** Revenue **;
+138        * Hospice *;
+139        %let excl_hospice_r =
+140        ('0115','0125','0135','0145','0155','0235','0620','0651','0652','0655','0656','0657','0658','0659','0810',
+141         '0811','0812','0813','0814','0815','0817','0818','0891','081A','081B','081C','081D','081E','081F','081G',
+142         '081H','081I','081J','081K','081M','081O','081X','081Y','081Z','0820','0821','0822','0823','0824','0825',
+143         '0827','0828','0829','082A','082B','082C','082D','082E','082F','082G','082H','082I','082J','082K','082M',
+144         '082O','082X','082Y','082Z') ;
+145        
+146         ** Rx **;
+147         * Morphine *;
+148         %let morph = ('J2270','J2271','J2275','S0093','Q9974');
+149        
+150         * Treatment Rx *;
+151         %let trt_rx = ('J0571','J0592','J0570','J0572','J0573','J0574','J0575','J0592','J2310');
+152        
+153         * Treatment Px *;
+154         %let trt_px = ('HZ81ZZZ','HZ82ZZZ','HZ84ZZZ','HZ85ZZZ','HZ86ZZZ','HZ91ZZZ','HZ92ZZZ','HZ94ZZZ','HZ95ZZZ','HZ96ZZZ');
+155        
+156         ** DxCats **;
+157         * Cancer: malignant neoplasms *;
+158         %let ca_dxcat =
+158      ! ('CVS81','DEN05','DEN06','DEN07','DEN08','END14','END15','END81','ENT13','ENT14','ENT15','ENT16','ENT17','EYE25','EYE26',
+158      ! 'EYE81','GIS27',
+159           				
+159      ! 'GIS28','GIS29','GIS30','GIS83','GUS05','GUS06','GUS81','GYN19','GYN20','GYN21','GYN22','GYN23','GYN24','GYN25','GYN81','
+159      ! HEM13','HEM14',
+160        				
+160      ! 'HEM15','HEM16','HEM17','HEM18','HEM19','HEM20','HEM21','HEM22','HEM23','HEM24','HEM25','HEM26','HEM27','HEM28','HEM29','
+160      ! HEM30','HEM31',
+161        				
+5                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+161      ! 'HEM32','HEM33','HEM34','HEM35','HEM37','HEM82','HEM83','HEM84','HEP11','HEP82','MGS04','MGS05','MGS06','MGS07','MUS33','
+161      ! OTH90','OTH91',
+162        				  'RES13','RES82','SKN06','SKN07','SKN08','SKN81');
+163        
+164        %let mh_dxc = ('PSY01','PSY02','PSY03','PSY04','PSY13','PSY14','PSY15','PSY16','PSY80','PSY81','PSY82','PSY83');
+165        
+166        
+167        ** Import raw data **;
+168        * Eligibility - looks like 1 record per member per mo *;
+169        data amex.elig;
+170          infile "/ace/AMEX_2018/Data/amex_opioid_elig_1212278.csv" delimiter = ',' missover dsd firstobs = 2 lrecl = 400;
+171          informat 'elig_start_dt'n MMDDYY10.;
+172          format 'elig_start_dt'n mmddyy10. enrolid $20. elig_start_dt business_unit_cd plan_cd $20. mdst_plan_model_cd $30.
+172      ! family_id $15. plan $75. table $12.;
+WARNING: Variable elig_start_dt has already been defined as numeric.
+173          input year $ enrolid $ employer_cd $ elig_start_dt $ sex $ mdst_age_grp_cd $ age_years zip_cd $ state_cd $ msa_cd $
+174        		years_svc salary_ind $ union_worker_ind $ business_unit_cd $ mdst_plan_model_cd $ mdst_plan_model $ family_id $
+174      ! mdst_relation_cd $
+175        		medical_covg_ind $ drug_covg_ind $ dental_covg_ind $ plan_cd $ plan $ table $;
+176        run;
+
+NOTE: The infile "/ace/AMEX_2018/Data/amex_opioid_elig_1212278.csv" is:
+      Filename=/ace/AMEX_2018/Data/amex_opioid_elig_1212278.csv,
+      Owner Name=u071439,Group Name=hcia,
+      Access Permission=-rw-r--r--,
+      Last Modified=13Aug2018:15:05:49,
+      File Size (bytes)=319998590
+
+NOTE: 1680808 records were read from the infile "/ace/AMEX_2018/Data/amex_opioid_elig_1212278.csv".
+      The minimum record length was 162.
+      The maximum record length was 199.
+NOTE: The data set AMEX.ELIG has 1680808 observations and 24 variables.
+NOTE: DATA statement used (Total process time):
+      real time           12.62 seconds
+      cpu time            4.36 seconds
+      
+
+177        
+178        * Claims: Medical/Pharmacy *;
+179        * Note: Rx does not have generid which is how we classify Rx *;
+180        data amex.claims;
+181          infile "/ace/AMEX_2018/Data/amex_opioid_claims_1212277.csv" dlm = ',' missover dsd firstobs = 2 lrecl = 700;
+182          informat 'svcdate'n 'tsvcdat'n 'paiddt'n MMDDYY10.;
+183          format 'svcdate'n 'tsvcdat'n 'paiddt'n MMDDYY10. enrolid $20. claim_id mdst_prov_type $30. ndcnum $11.
+183      ! dtl_ther_class_cd npi_id $10.
+184        		 prov_id $25. prov_name std_hosp ord_prov_name $70. prov_id $25. epi_id $30. adm_id $16. mdst_place_grp_cd table $12.;
+185          input year_paid $ enrolid $ employer_cd $ claim_id $ line_nbr svcdate tsvcdat dstatus $ cap_svc_ind $ paiddt
+186          		pay chg netpay paid_in_ntwk_ind $ ntwk_prov_ind $ coins copay deduct proc1 $
+187        		proc_system_cd $ proc_cat_cd $ procgrp $ dxcat $ clincond $ dx1 $ dx2 $ dx3 $ dx4 $
+188        		dx5 $ dx6 $ dx7 $ dx8 $ dx9 $ dx10 $ dxver $ drg $ svcscat $ mdst_svc_subcat_cd $
+189        		mdc $ ndcnum $ dtl_ther_class_cd $ int_ther_class_cd stdplac $ prov_id $ mdst_prov_type_cd $ stdprov $ npi $
+190        		prov_name $ std_hosp $ ord_prov $ ord_prov_name $ daysupp rx_refill_nbr compound_cd $ epi_id $ adm_id $ revcode $
+191        		rb_flag $ mdst_place_grp_cd $ table $;
+192         run;
+
+NOTE: Variable mdst_prov_type is uninitialized.
+NOTE: Variable npi_id is uninitialized.
+NOTE: The infile "/ace/AMEX_2018/Data/amex_opioid_claims_1212277.csv" is:
+6                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+      Filename=/ace/AMEX_2018/Data/amex_opioid_claims_1212277.csv,
+      Owner Name=u071439,Group Name=hcia,
+      Access Permission=-rw-r--r--,
+      Last Modified=13Aug2018:15:20:09,
+      File Size (bytes)=2128604431
+
+NOTE: Invalid data for daysupp in line 2 343-355.
+RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0                      
+2         "2016","s0ihfs1WtMQosXfyTl","2858","00000886028420160925",-1,09/25/2016,12/31/1864,"~","N",10/20/201
+     101  6,7.91,42.44,.00,"Y","Y",7.77,7.77,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~","
+     201  ~","~","~","5075","50175","~","00603576321","4028100020",123,"1","1306868088","Pharmacy","935","1306
+     301  868088","CVS PHARMACY #","~","1033194196","ROBERT FOWLER",30,1,"~","~","~","~","~","5","Drug" 393
+'svcdate'n=09/25/2016 'tsvcdat'n=12/31/1864 'paiddt'n=10/20/2016 enrolid=s0ihfs1WtMQosXfyTl claim_id=00000886028420160925
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=0060357632 npi_id=  prov_id=1 prov_name=1306868088 std_hosp=CVS PHARMACY #
+ord_prov_name=1033194196 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=7.91 chg=42.44 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=7.77 copay=7.77 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=4028100020 stdplac=123 mdst_prov_type_cd=13068680
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=1 revcode=~ rb_flag=~ _ERROR_=1 _N_=1
+NOTE: Invalid data for daysupp in line 3 344-356.
+3         "2016","s0ihiUlb43los11bql","2858","00000486512020160617",-1,06/17/2016,12/31/1864,"~","N",07/14/201
+     101  6,56.03,56.03,56.03,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~",
+     201  "~","~","~","5072","50172","~","00591368501","0836010055",19,"1","1649352006","Pharmacy","935","1649
+     301  352006","EXPRESS SCRIPTS","~","1902865116","JASON JAMESON",90,0,"~","25108031330701","~","~","~","5"
+     401  ,"Drug" 407
+'svcdate'n=06/17/2016 'tsvcdat'n=12/31/1864 'paiddt'n=07/14/2016 enrolid=s0ihiUlb43los11bql claim_id=00000486512020160617
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=0059136850 npi_id=  prov_id=1 prov_name=1649352006 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1902865116 epi_id=~ adm_id=25108031330701 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=56.03 chg=56.03 netpay=56.03 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=836010055 stdplac=19 mdst_prov_type_cd=16493520 stdprov=Pharmacy
+npi=935 ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=2
+NOTE: Invalid data for daysupp in line 4 351-364.
+4         "2016","s0ihi2l1bJQosoWyTP","2858","00000280521920160831",-1,08/31/2016,12/31/1864,"~","N",09/22/201
+     101  6,608.95,731.28,548.05,"Y","Y",60.90,60.90,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","
+     201  ~","~","~","~","~","5075","50175","~","49502050002","1212010035",27,"1","1891700134","Pharmacy","935
+     301  ","1891700134","WALGREENS #3048","~","1104921048","MUHAMMAD AHMAD",1,0,"~","24863111342301","~","~",
+     401  "~","5","Drug" 414
+'svcdate'n=08/31/2016 'tsvcdat'n=12/31/1864 'paiddt'n=09/22/2016 enrolid=s0ihi2l1bJQosoWyTP claim_id=00000280521920160831
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=4950205000 npi_id=  prov_id=1 prov_name=1891700134 std_hosp=WALGREENS #3048
+ord_prov_name=1104921048 epi_id=~ adm_id=24863111342301 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=608.95 chg=731.28 netpay=548.05 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=60.9 copay=60.9 deduct=0
+proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~
+dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=1212010035 stdplac=27 mdst_prov_type_cd=18917001
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=1 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=3
+NOTE: Invalid data for daysupp in line 5 355-370.
+5         "2016","s0iho2Fb4h1osldbil","2858","00000071162220161112",-1,11/12/2016,12/31/1864,"~","N",12/01/201
+     101  6,34.46,257.16,27.57,"Y","Y",6.89,6.89,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","
+     201  ~","~","~","~","5075","50175","~","60505008000","2404160120",51,"1","1386753622","Pharmacy","935","1
+     301  386753622","RITE AID PHARMACY 02390","~","1104897990","WILLIAM POLINSKI",50,1,"~","25456581315003","
+     401  ~","~","~","5","Drug" 421
+'svcdate'n=11/12/2016 'tsvcdat'n=12/31/1864 'paiddt'n=12/01/2016 enrolid=s0iho2Fb4h1osldbil claim_id=00000071162220161112
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=6050500800 npi_id=  prov_id=1 prov_name=1386753622 std_hosp=RITE AID PHARMACY 02390
+ord_prov_name=1104897990 epi_id=~ adm_id=25456581315003 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=34.46 chg=257.16 netpay=27.57 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=6.89 copay=6.89 deduct=0
+proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~
+dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2404160120 stdplac=51 mdst_prov_type_cd=13867536
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=50 compound_cd=1 revcode=~ rb_flag=~ _ERROR_=1 _N_=4
+7                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+NOTE: Invalid data for daysupp in line 6 344-354.
+RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0                      
+6         "2017","s0iho2Fb4oloslvbqP","2858","00000221792420170103",-1,01/03/2017,12/31/1864,"~","N",01/26/201
+     101  7,7.37,7.37,2.37,"Y","Y",5.00,.00,5.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~","
+     201  ~","~","~","5072","50172","~","00054327099","5208010036",138,"1","1417376765","Pharmacy","935","1417
+     301  376765","EXPRESS SCRIPTS","~","1770857088","KEVIN LAPIN",30,0,"~","~","~","~","~","5","Drug" 392
+'svcdate'n=01/03/2017 'tsvcdat'n=12/31/1864 'paiddt'n=01/26/2017 enrolid=s0iho2Fb4oloslvbqP claim_id=00000221792420170103
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=0005432709 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1770857088 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=7.37 chg=7.37 netpay=2.37 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=5 copay=0 deduct=5 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=5208010036 stdplac=138 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=5
+NOTE: Invalid data for daysupp in line 7 347-357.
+7         "2018","s0iho2Fb4oloslvbqP","2858","00000041903720171215",-1,12/15/2017,12/31/1864,"~","N",01/11/201
+     101  8,181.49,181.49,181.49,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","
+     201  ~","~","~","~","5072","50172","~","98302000200","3626000000",85,"1","1245251214","Pharmacy","935","1
+     301  245251214","EXPRESS SCRIPTS","~","1770857088","KEVIN LAPIN",90,1,"~","~","~","~","~","5","Drug" 395
+'svcdate'n=12/15/2017 'tsvcdat'n=12/31/1864 'paiddt'n=01/11/2018 enrolid=s0iho2Fb4oloslvbqP claim_id=00000041903720171215
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=9830200020 npi_id=  prov_id=1 prov_name=1245251214 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1770857088 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2018 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=181.49 chg=181.49 netpay=181.49 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=3626000000 stdplac=85 mdst_prov_type_cd=12452512
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=1 revcode=~ rb_flag=~ _ERROR_=1 _N_=6
+NOTE: Invalid data for daysupp in line 8 343-354.
+8         "2016","s0ihosl1bqgosafbQP","2858","00000044062420160113",-1,01/13/2016,12/31/1864,"~","N",01/28/201
+     101  6,11.55,76.49,.00,"Y","Y",11.55,.00,.00,11.55,"","","","","~","~","~","~","~","~","~","~","~","~","~
+     201  ","~","~","~","5075","50175","~","66685100200","0812160005",10,"1","1427153261","Pharmacy","935","14
+     301  27153261","CVS PHARMACY","~","1790739969","VINAY KWATRA",10,0,"~","25671411316201","~","~","~","5","
+     401  Drug" 405
+'svcdate'n=01/13/2016 'tsvcdat'n=12/31/1864 'paiddt'n=01/28/2016 enrolid=s0ihosl1bqgosafbQP claim_id=00000044062420160113
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=6668510020 npi_id=  prov_id=1 prov_name=1427153261 std_hosp=CVS PHARMACY
+ord_prov_name=1790739969 epi_id=~ adm_id=25671411316201 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=11.55 chg=76.49 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=11.55 copay=0 deduct=0 proc1=11.55
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=812160005 stdplac=10 mdst_prov_type_cd=14271532 stdprov=Pharmacy
+npi=935 ord_prov=~ daysupp=. rx_refill_nbr=10 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=7
+NOTE: Invalid data for daysupp in line 9 347-362.
+9         "2017","s0ihihXf6uWostsbuP","2858","00000704429920170724",-1,07/24/2017,12/31/1864,"~","N",08/10/201
+     101  7,4.65,68.96,.00,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~","~"
+     201  ,"~","~","5075","50175","~","43547036111","2404010040",46,"1","1174562128","Pharmacy","935","1174562
+     301  128","PUBLIX PHARMACY #0637","~","1912989088","ROBERT BARBARITE",30,0,"~","25259541351601","~","~","
+     401  ~","5","Drug" 413
+'svcdate'n=07/24/2017 'tsvcdat'n=12/31/1864 'paiddt'n=08/10/2017 enrolid=s0ihihXf6uWostsbuP claim_id=00000704429920170724
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=4354703611 npi_id=  prov_id=1 prov_name=1174562128 std_hosp=PUBLIX PHARMACY #0637
+ord_prov_name=1912989088 epi_id=~ adm_id=25259541351601 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=4.65 chg=68.96 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2404010040 stdplac=46 mdst_prov_type_cd=11745621
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=8
+NOTE: Invalid data for daysupp in line 10 343-353.
+10        "2016","s0ihi2o1bQPosX1yhl","2858","00000061481820160924",-1,09/24/2016,12/31/1864,"~","N",10/20/201
+     101  6,1.80,26.09,1.80,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~","~
+     201  ","~","~","5075","50175","~","00378191210","2812080015",64,"1","1265605539","Pharmacy","935","126560
+     301  5539","WALGREENS #10678","~","1124123823","BRUCE CHUNG",15,0,"~","~","~","~","~","5","Drug" 391
+'svcdate'n=09/24/2016 'tsvcdat'n=12/31/1864 'paiddt'n=10/20/2016 enrolid=s0ihi2o1bQPosX1yhl claim_id=00000061481820160924
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=0037819121 npi_id=  prov_id=1 prov_name=1265605539 std_hosp=WALGREENS #10678
+8                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+ord_prov_name=1124123823 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=1.8 chg=26.09 netpay=1.8 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2812080015 stdplac=64 mdst_prov_type_cd=12656055 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=15 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=9
+NOTE: Invalid data for daysupp in line 11 351-363.
+RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0                      
+11        "2016","s0ihosGE4ilosotbQP","2858","00000592687520160429",-1,04/29/2016,12/31/1864,"~","N",05/19/201
+     101  6,220.54,220.54,198.49,"Y","Y",22.05,22.05,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","
+     201  ~","~","~","~","~","5072","50172","~","53885024510","3626010005",85,"1","1417376765","Pharmacy","935
+     301  ","1417376765","EXPRESS SCRIPTS","~","1033178694","RICKY STUGART",90,3,"~","25548951315002","~","~",
+     401  "~","5","Drug" 414
+'svcdate'n=04/29/2016 'tsvcdat'n=12/31/1864 'paiddt'n=05/19/2016 enrolid=s0ihosGE4ilosotbQP claim_id=00000592687520160429
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=5388502451 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1033178694 epi_id=~ adm_id=25548951315002 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=220.54 chg=220.54 netpay=198.49 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=22.05 copay=22.05 deduct=0
+proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~
+dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=3626010005 stdplac=85 mdst_prov_type_cd=14173767
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=3 revcode=~ rb_flag=~ _ERROR_=1 _N_=10
+NOTE: Invalid data for daysupp in line 12 342-351.
+12        "2016","s0ihosPoyhtosltyQl","2858","00000127019020161026",-1,10/26/2016,12/31/1864,"~","N",11/17/201
+     101  6,9.75,49.70,7.80,"Y","Y",1.95,1.95,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~",
+     201  "~","~","~","5075","50175","~","61314022715","5236010130",146,"1","1154424927","Pharmacy","935","115
+     301  4424927","CVS PHARMACY","~","1932125424","CRAIG WOOD",84,1,"~","25604771315001","~","~","~","5","Dru
+     401  g" 402
+'svcdate'n=10/26/2016 'tsvcdat'n=12/31/1864 'paiddt'n=11/17/2016 enrolid=s0ihosPoyhtosltyQl claim_id=00000127019020161026
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=6131402271 npi_id=  prov_id=1 prov_name=1154424927 std_hosp=CVS PHARMACY
+ord_prov_name=1932125424 epi_id=~ adm_id=25604771315001 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=9.75 chg=49.7 netpay=7.8 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=1.95 copay=1.95 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=5236010130 stdplac=146 mdst_prov_type_cd=11544249
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=84 compound_cd=1 revcode=~ rb_flag=~ _ERROR_=1 _N_=11
+NOTE: Invalid data for daysupp in line 13 358-370.
+13        "2017","s0ihihcf2qWosGvbJl","2858","00000638683720171030",-1,10/30/2017,12/31/1864,"~","N",11/16/201
+     101  7,77.25,160.87,77.25,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~"
+     201  ,"~","~","~","5075","50175","~","00781716783","6816010035",170,"1","1336554112","Pharmacy","935","13
+     301  36554112","INTEGRITY RX SPECIALTY PHCY","~","1912932559","MILLIE BEHERA",28,1,"~","25232111377901","
+     401  ~","~","~","5","Drug" 421
+'svcdate'n=10/30/2017 'tsvcdat'n=12/31/1864 'paiddt'n=11/16/2017 enrolid=s0ihihcf2qWosGvbJl claim_id=00000638683720171030
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=0078171678 npi_id=  prov_id=1 prov_name=1336554112 std_hosp=INTEGRITY RX SPECIALTY PHCY
+ord_prov_name=1912932559 epi_id=~ adm_id=25232111377901 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=77.25 chg=160.87 netpay=77.25 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=6816010035 stdplac=170 mdst_prov_type_cd=13365541
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=28 compound_cd=1 revcode=~ rb_flag=~ _ERROR_=1 _N_=12
+NOTE: Invalid data for daysupp in line 14 344-355.
+14        "2017","s0iho2cEyQlosXWyTP","2858","00000521520020161223",-1,12/23/2016,12/31/1864,"~","N",01/12/201
+     101  7,22.45,22.45,22.45,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~",
+     201  "~","~","~","5072","50172","~","59762015601","2406010005",53,"1","1649352006","Pharmacy","935","1649
+     301  352006","EXPRESS SCRIPTS","~","1033155908","ADAM SABBATH",90,0,"~","25500681315002","~","~","~","5",
+     401  "Drug" 406
+'svcdate'n=12/23/2016 'tsvcdat'n=12/31/1864 'paiddt'n=01/12/2017 enrolid=s0iho2cEyQlosXWyTP claim_id=00000521520020161223
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=5976201560 npi_id=  prov_id=1 prov_name=1649352006 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1033155908 epi_id=~ adm_id=25500681315002 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=22.45 chg=22.45 netpay=22.45 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2406010005 stdplac=53 mdst_prov_type_cd=16493520
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=13
+9                                                          The SAS System                             14:27 Tuesday, August 21, 2018
+
+NOTE: Invalid data for daysupp in line 15 338-349.
+RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0                      
+15        "2017","s0iho2cEyQlosXWyTP","2858","00000053582620170304",-1,03/04/2017,12/31/1864,"~","N",03/23/201
+     101  7,2.65,68.83,.00,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~","~"
+     201  ,"~","~","5075","50175","~","68382013616","2404010040",46,"1","1154425049","Pharmacy","935","1154425
+     301  049","CVS PHARMACY","~","1033155908","ADAM SABBATH",30,4,"~","25500681315003","~","~","~","5","Drug" 400
+'svcdate'n=03/04/2017 'tsvcdat'n=12/31/1864 'paiddt'n=03/23/2017 enrolid=s0iho2cEyQlosXWyTP claim_id=00000053582620170304
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=6838201361 npi_id=  prov_id=1 prov_name=1154425049 std_hosp=CVS PHARMACY
+ord_prov_name=1033155908 epi_id=~ adm_id=25500681315003 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=2.65 chg=68.83 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2404010040 stdplac=46 mdst_prov_type_cd=11544250
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=4 revcode=~ rb_flag=~ _ERROR_=1 _N_=14
+NOTE: Invalid data for daysupp in line 16 348-360.
+16        "2016","s0ihi2lbtM1os1dbQl","2858","00000404199320160308",-1,03/08/2016,12/31/1864,"~","N",03/24/201
+     101  6,6.74,9.33,.00,"Y","Y",6.74,.00,.00,6.74,"","","","","~","~","~","~","~","~","~","~","~","~","~","~
+     201  ","~","~","5075","50175","~","00093015010","2808080010",60,"1","1689614067","Pharmacy","935","168961
+     301  4067","PUBLIX PHARMACY #0805","~","1841213055","ZAHID QURESHI",7,0,"~","~","~","~","~","5","Drug" 397
+'svcdate'n=03/08/2016 'tsvcdat'n=12/31/1864 'paiddt'n=03/24/2016 enrolid=s0ihi2lbtM1os1dbQl claim_id=00000404199320160308
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=0009301501 npi_id=  prov_id=1 prov_name=1689614067 std_hosp=PUBLIX PHARMACY #0805
+ord_prov_name=1841213055 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=6.74 chg=9.33 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=6.74 copay=0 deduct=0 proc1=6.74 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2808080010 stdplac=60 mdst_prov_type_cd=16896140 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=7 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=15
+NOTE: Invalid data for daysupp in line 17 350-365.
+17        "2016","s0ihoscvZqtoslobql","2858","00000287869020160508",-1,05/08/2016,12/31/1864,"~","N",06/02/201
+     101  6,379.52,379.52,374.52,"Y","Y",5.00,.00,5.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~"
+     201  ,"~","~","~","~","5072","50172","~","43598051090","5655000050",162,"1","1417376765","Pharmacy","935"
+     301  ,"1417376765","EXPRESS SCRIPTS","~","1033281191","JASON HAFFIZULLA",90,0,"~","~","~","~","~","5","Dr
+     401  ug" 403
+'svcdate'n=05/08/2016 'tsvcdat'n=12/31/1864 'paiddt'n=06/02/2016 enrolid=s0ihoscvZqtoslobql claim_id=00000287869020160508
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=4359805109 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1033281191 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=379.52 chg=379.52 netpay=374.52 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=5 copay=0 deduct=5 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=5655000050 stdplac=162 mdst_prov_type_cd=14173767
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=16
+NOTE: Invalid data for daysupp in line 18 346-360.
+18        "2015","s0iho2XfoqtosovbMl","2858","00000090414620150923",-1,09/23/2015,12/31/1864,"~","N",10/08/201
+     101  5,3.71,10.56,3.71,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~","~
+     201  ","~","~","5075","50175","~","55111068305","2808040030",59,"1","1831293729","Pharmacy","935","183129
+     301  3729","CVS PHARMACY #00069","~","1043422777","DESIREE BROTSKY",10,0,"~","25508021298701","~","~","~"
+     401  ,"5","Drug" 411
+'svcdate'n=09/23/2015 'tsvcdat'n=12/31/1864 'paiddt'n=10/08/2015 enrolid=s0iho2XfoqtosovbMl claim_id=00000090414620150923
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=5511106830 npi_id=  prov_id=1 prov_name=1831293729 std_hosp=CVS PHARMACY #00069
+ord_prov_name=1043422777 epi_id=~ adm_id=25508021298701 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=3.71 chg=10.56 netpay=3.71 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2808040030 stdplac=59 mdst_prov_type_cd=18312937
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=10 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=17
+NOTE: Invalid data for daysupp in line 19 347-360.
+19        "2015","s0iho2XW63hosovb3P","2858","00000991987420150916",-1,09/16/2015,12/31/1864,"~","N",10/08/201
+     101  5,127.86,127.86,127.86,"Y","Y",.00,.00,.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","
+     201  ~","~","~","~","5072","50172","~","00074612390","2406010045",53,"1","1063645026","Pharmacy","935","1
+     301  063645026","EXPRESS SCRIPTS","~","1780761957","KENNETH FISHER",90,1,"~","25450071278501","~","~","~"
+     401  ,"5","Drug" 411
+'svcdate'n=09/16/2015 'tsvcdat'n=12/31/1864 'paiddt'n=10/08/2015 enrolid=s0iho2XW63hosovb3P claim_id=00000991987420150916
+10                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=0007461239 npi_id=  prov_id=1 prov_name=1063645026 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1780761957 epi_id=~ adm_id=25450071278501 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=127.86 chg=127.86 netpay=127.86 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2406010045 stdplac=53 mdst_prov_type_cd=10636450
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=1 revcode=~ rb_flag=~ _ERROR_=1 _N_=18
+NOTE: Invalid data for daysupp in line 20 347-357.
+RULE:     ----+----1----+----2----+----3----+----4----+----5----+----6----+----7----+----8----+----9----+----0                      
+20        "2016","s0ihOOtbouhosP1yQP","2858","00000116473620160811",-1,08/11/2016,12/31/1864,"~","N",08/25/201
+     101  6,78.94,78.94,73.94,"Y","Y",5.00,.00,5.00,.00,"","","","","~","~","~","~","~","~","~","~","~","~","~
+     201  ","~","~","~","5072","50172","~","60758011910","5208010060",138,"1","1063645026","Pharmacy","935","1
+     301  063645026","EXPRESS SCRIPTS","~","1780720219","AARUP KUBAL",13,0,"~","~","~","~","~","5","Drug" 395
+'svcdate'n=08/11/2016 'tsvcdat'n=12/31/1864 'paiddt'n=08/25/2016 enrolid=s0ihOOtbouhosP1yQP claim_id=00000116473620160811
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=6075801191 npi_id=  prov_id=1 prov_name=1063645026 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1780720219 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=78.94 chg=78.94 netpay=73.94 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=5 copay=0 deduct=5 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=5208010060 stdplac=138 mdst_prov_type_cd=10636450
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=13 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=19
+NOTE: Invalid data for daysupp in line 21 342-353.
+WARNING: Limit set by ERRORS= option reached.  Further errors of this type will not be printed.
+21        "2017","s0ihi2FvZuWosGdboP","2858","00000048676920170303",-1,03/03/2017,12/31/1864,"~","N",03/23/201
+     101  7,3.49,3.49,.00,"Y","Y",3.49,.00,.00,3.49,"","","","","~","~","~","~","~","~","~","~","~","~","~","~
+     201  ","~","~","5072","50172","~","65862019399","2816040120",69,"1","1649352006","Pharmacy","935","164935
+     301  2006","EXPRESS SCRIPTS","~","1104865922","ANTHONY KATZ",90,0,"~","24824241351601","~","~","~","5","D
+     401  rug" 404
+'svcdate'n=03/03/2017 'tsvcdat'n=12/31/1864 'paiddt'n=03/23/2017 enrolid=s0ihi2FvZuWosGdboP claim_id=00000048676920170303
+mdst_prov_type=  ndcnum=~ dtl_ther_class_cd=6586201939 npi_id=  prov_id=1 prov_name=1649352006 std_hosp=EXPRESS SCRIPTS
+ord_prov_name=1104865922 epi_id=~ adm_id=24824241351601 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=3.49 chg=3.49 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=3.49 copay=0 deduct=0 proc1=3.49
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2816040120 stdplac=69 mdst_prov_type_cd=16493520
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ _ERROR_=1 _N_=20
+NOTE: 4938362 records were read from the infile "/ace/AMEX_2018/Data/amex_opioid_claims_1212277.csv".
+      The minimum record length was 353.
+      The maximum record length was 588.
+NOTE: The data set AMEX.CLAIMS has 4938362 observations and 62 variables.
+NOTE: DATA statement used (Total process time):
+      real time           1:08.76
+      cpu time            29.32 seconds
+      
+
+193        
+194         * Not using this yet *;
+195        /* Admissions *;
+196         data amex.adm;
+197           infile  "/ace/AMEX_2018/Data/amex_opioid_admit_1212284.csv" dlm = ',' missover dsd firstobs = 2 lrecl = 120;
+198           informat 'ADMDATE'n 'PDDATE'n MMDDYY10.;
+199           format 'ADMDATE'n 'PDDATE'n MMDDYY10. enrolid $20. adm_id $16. table $12.;
+200           input year $ enrolid $ employer_cd $ adm_id $ admdate pddate svcdate proc1 $ drg $ pdx $ dxver $ totchg totpay
+200      ! totnetpay los table $;
+201        run;
+202        
+203        * MEG *;
+204        data amex.meg;
+205          infile  "/ace/AMEX_2018/Data/amex_opioid_epis_1212285.csv" dlm = ',' missover dsd firstobs = 2 lrecl = 200;
+206          informat 'SVCDATE'n 'TSVCDAT'n MMDDYY10.;
+207          format 'SVCDATE'n 'TSVCDAT'n MMDDYY10. enrolid $20. epi_id $16.mng_phys_type mdst_phys_type $30. prov_id $13. table
+11                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+207      ! $12.;
+208          input year enrolid $ employer_cd $ epi_id $ epi_adm_cnt epi_rx_cnt svcdate tsvcdat epi_days_cnt epi_grp_cd $
+208      ! epi_incomplete_ind $
+209          		epi_proc_type_cd $ epi_disease_stg_cd $ epi_pay epi_submit epi_netpay epi_op_pay epi_op_submit epi_op_netpay
+209      ! epi_rx_pay
+210        		epi_rx_submit epi_rx_netpay epi_tot_pay epi_tot_submit epi_tot_netpay prov_id $ mng_phys_type $ mng_phys_type_cd $
+210      ! prov_id $
+211        		mdst_phys_type $ stdprov $ table $;
+212        run;
+213        */
+214        
+215        ** QA **;
+216        * Eligibility *;
+217        proc freq data= amex.elig;
+218          title 'Am Ex: Eligibility';
+219          tables year employer_cd elig_start_dt sex mdst_age_grp_cd zip_cd state_cd msa_cd salary_ind union_worker_ind
+219      ! business_unit_cd
+220                 mdst_plan_model_cd mdst_plan_model mdst_relation_cd medical_covg_ind drug_covg_ind dental_covg_ind plan_cd plan
+220      ! table / missprint;
+221        run;
+
+NOTE: There were 1680808 observations read from the data set AMEX.ELIG.
+NOTE: The PROCEDURE FREQ printed pages 1-135.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           5.41 seconds
+      cpu time            2.83 seconds
+      
+
+222        proc means data=amex.elig;
+223          var age_years years_svc;
+224        run;
+
+NOTE: There were 1680808 observations read from the data set AMEX.ELIG.
+NOTE: The PROCEDURE MEANS printed page 136.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           4.80 seconds
+      cpu time            0.46 seconds
+      
+
+225        
+226        * Claims *;
+227        proc freq data= amex.claims;
+228          title 'Am Ex: Claims - Med/Rx';
+229          tables year_paid employer_cd svcdate dstatus cap_svc_ind paid_in_ntwk_ind ntwk_prov_ind proc1 proc_system_cd
+229      ! proc_cat_cd procgrp
+230                 dxcat clincond dx1 dxver drg svcscat mdst_svc_subcat_cd mdc dtl_ther_class_cd int_ther_class_cd stdplac
+230      ! mdst_prov_type_cd
+231                 stdprov std_hosp revcode rb_flag mdst_place_grp_cd table / missprint;
+232        run;
+
+NOTE: There were 4938362 observations read from the data set AMEX.CLAIMS.
+NOTE: The PROCEDURE FREQ printed pages 137-4983.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           35.66 seconds
+      cpu time            21.96 seconds
+      
+
+233        proc means data=amex.claims;
+12                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+234          var pay chg netpay coins copay deduct daysupp;
+235        run;
+
+NOTE: There were 4938362 observations read from the data set AMEX.CLAIMS.
+NOTE: The PROCEDURE MEANS printed page 4984.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           34.62 seconds
+      cpu time            3.50 seconds
+      
+
+236        
+237        /* Admissions *;
+238        proc freq data= amex.adm;
+239          title 'Am Ex: Admissions';
+240          tables year employer_cd admdate svcdate proc1 drg pdx dxver table / missprint;
+241        run;
+242        proc means data=amex.adm;
+243          var totchg totpay totnetpay los;
+244        run;
+245        
+246        * Admissions *;
+247        proc freq data= amex.meg;
+248          title 'Am Ex: MEG';
+249          tables year employer_cd svcdate epi_grp_cd epi_incomplete_ind epi_proc_type_cd epi_disease_stg_cd mng_phys_type
+249      ! mng_phys_type_cd
+250                 mdst_phys_type stdprov table / missprint;
+251        run;
+252        proc means data=amex.mge;
+253          var epi_adm_cnt epi_rx_cnt epi_days_cnt epi_pay epi_submit epi_netpay epi_op_pay epi_op_submit epi_op_netpay epi_rx_pay
+254              epi_rx_submit epi_rx_netpay epi_tot_pay epi_tot_submit epi_tot_netpay;
+255        run;
+256        */
+257        
+258        ** Value Sets from file **;
+259        * Cancer, Mental Health dx, Rx *;
+260        data library.opioid_vs_&hedis_yr;
+261          infile "/ace/AMEX_2018/SAS/library/opioid_value_sets_2017.csv" dlm = ',' missover dsd firstobs = 2;
+262          length msre_name $50 type_of_code short_name $20;
+263          input msre_name $ type_of_code $ Code $ short_name $;
+264          if type_of_code = 'generid' then fmtname = trim(short_name) || '_' || type_of_code;
+265            else                           fmtname = '$' || trim(short_name) || '_' || type_of_code;
+266          label = trim(short_name) || '_' || type_of_code;
+267          dx = code;
+268        run;
+
+NOTE: The infile "/ace/AMEX_2018/SAS/library/opioid_value_sets_2017.csv" is:
+      Filename=/ace/AMEX_2018/SAS/library/opioid_value_sets_2017.csv,
+      Owner Name=u071439,Group Name=hcia,
+      Access Permission=-rwxr-xr-x,
+      Last Modified=15Aug2018:14:38:07,
+      File Size (bytes)=212195
+
+NOTE: 4851 records were read from the infile "/ace/AMEX_2018/SAS/library/opioid_value_sets_2017.csv".
+      The minimum record length was 15.
+      The maximum record length was 61.
+NOTE: The data set LIBRARY.OPIOID_VS_2017 has 4851 observations and 7 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.07 seconds
+13                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+      cpu time            0.01 seconds
+      
+
+269        
+270        proc freq data=library.opioid_vs_&hedis_yr; tables fmtname / missprint; run;
+
+NOTE: There were 4851 observations read from the data set LIBRARY.OPIOID_VS_2017.
+NOTE: The PROCEDURE FREQ printed page 4985.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+271        proc sort data=library.opioid_vs_&hedis_yr out = dx nodupkey; by fmtname dx; run;
+
+NOTE: There were 4851 observations read from the data set LIBRARY.OPIOID_VS_2017.
+NOTE: 0 observations with duplicate key values were deleted.
+NOTE: The data set WORK.DX has 4851 observations and 7 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+272        proc format library=library cntlin=dx(where = (start ne '') rename=(dx=start));
+NOTE: Format $ED_CPT is already on the library LIBRARY.FORMATS.
+NOTE: Format $ED_CPT has been written to LIBRARY.FORMATS.
+NOTE: Format $ED_UBREV is already on the library LIBRARY.FORMATS.
+NOTE: Format $ED_UBREV has been written to LIBRARY.FORMATS.
+NOTE: Format $HX_MALIG_NEO_ICD10CM is already on the library LIBRARY.FORMATS.
+NOTE: Format $HX_MALIG_NEO_ICD10CM has been written to LIBRARY.FORMATS.
+NOTE: Format $HX_MALIG_NEO_ICD9CM is already on the library LIBRARY.FORMATS.
+NOTE: Format $HX_MALIG_NEO_ICD9CM has been written to LIBRARY.FORMATS.
+NOTE: Format $MH_DX_ICD10CM is already on the library LIBRARY.FORMATS.
+NOTE: Format $MH_DX_ICD10CM has been written to LIBRARY.FORMATS.
+NOTE: Format $MH_DX_ICD9CM is already on the library LIBRARY.FORMATS.
+NOTE: Format $MH_DX_ICD9CM has been written to LIBRARY.FORMATS.
+NOTE: Format $MAL_NEO_ICD10CM is already on the library LIBRARY.FORMATS.
+NOTE: Format $MAL_NEO_ICD10CM has been written to LIBRARY.FORMATS.
+NOTE: Format $MAL_NEO_ICD9CM is already on the library LIBRARY.FORMATS.
+NOTE: Format $MAL_NEO_ICD9CM has been written to LIBRARY.FORMATS.
+NOTE: Format $OTH_NEO_ICD10CM is already on the library LIBRARY.FORMATS.
+NOTE: Format $OTH_NEO_ICD10CM has been written to LIBRARY.FORMATS.
+NOTE: Format $OTH_NEO_ICD9CM is already on the library LIBRARY.FORMATS.
+NOTE: Format $OTH_NEO_ICD9CM has been written to LIBRARY.FORMATS.
+NOTE: Format $ANTIDEP_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $ANTIDEP_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $ANTIPSY_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $ANTIPSY_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $BAD_POT_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $BAD_POT_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $BARB_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $BARB_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $BENZO_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $BENZO_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $BUP_METH_NALT_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $BUP_METH_NALT_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $BUPREN_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $BUPREN_GENERID has been written to LIBRARY.FORMATS.
+14                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+NOTE: Format $FENT_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $FENT_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $GOOD_POT_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $GOOD_POT_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $LONG_ACTING_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $LONG_ACTING_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $METH_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $METH_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $MORPHINE_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $MORPHINE_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $MUSCLE_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $MUSCLE_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $NALOX_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $NALOX_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $NALTREX_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $NALTREX_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $NAT_OPIOID_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $NAT_OPIOID_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $OP_LAX_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $OP_LAX_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $SEMI_OPIOID_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $SEMI_OPIOID_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format $SYN_OPIOID_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format $SYN_OPIOID_GENERID has been written to LIBRARY.FORMATS.
+272      !                                                                                 run;
+
+NOTE: PROCEDURE FORMAT used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.02 seconds
+      
+NOTE: There were 4851 observations read from the data set WORK.DX.
+      WHERE start not = ' ';
+
+273        proc sort data=library.opioid_vs_&hedis_yr (where = (type_of_code = 'generid')) out = rx nodupkey; by fmtname code; run;
+
+NOTE: There were 1871 observations read from the data set LIBRARY.OPIOID_VS_2017.
+      WHERE type_of_code='generid';
+NOTE: 0 observations with duplicate key values were deleted.
+NOTE: The data set WORK.RX has 1871 observations and 7 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+274        proc format library=library cntlin=rx(where = (start ne '') rename=(code=start));
+NOTE: Format ANTIDEP_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format ANTIDEP_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format ANTIPSY_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format ANTIPSY_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format BAD_POT_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format BAD_POT_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format BARB_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format BARB_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format BENZO_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format BENZO_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format BUP_METH_NALT_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format BUP_METH_NALT_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format BUPREN_GENERID is already on the library LIBRARY.FORMATS.
+15                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+NOTE: Format BUPREN_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format FENT_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format FENT_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format GOOD_POT_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format GOOD_POT_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format LONG_ACTING_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format LONG_ACTING_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format METH_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format METH_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format MORPHINE_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format MORPHINE_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format MUSCLE_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format MUSCLE_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format NALOX_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format NALOX_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format NALTREX_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format NALTREX_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format NAT_OPIOID_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format NAT_OPIOID_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format OP_LAX_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format OP_LAX_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format SEMI_OPIOID_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format SEMI_OPIOID_GENERID has been written to LIBRARY.FORMATS.
+NOTE: Format SYN_OPIOID_GENERID is already on the library LIBRARY.FORMATS.
+NOTE: Format SYN_OPIOID_GENERID has been written to LIBRARY.FORMATS.
+274      !                                                                                   run;
+
+NOTE: PROCEDURE FORMAT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+NOTE: There were 1871 observations read from the data set WORK.RX.
+      WHERE start not = ' ';
+
+275        
+276        * Create eligibility files *;
+277        * Restrict to at least 11 months of enrollment per year and age at MPSD of CY14 of 12 yrs old *;
+278        proc sort data=amex.elig out = amex.elig_trim (keep = enrolid year elig_start_dt employer_cd sex age_years zip_cd
+278      ! state_cd msa_cd years_svc salary_ind
+279            union_worker_ind business_unit_cd mdst_plan_model_cd mdst_plan_model family_id mdst_relation_cd medical_covg_ind
+279      ! drug_covg_ind dental_covg_ind
+280            plan_cd plan);
+281          by enrolid elig_start_dt;
+282        run;
+
+NOTE: There were 1680808 observations read from the data set AMEX.ELIG.
+NOTE: The data set AMEX.ELIG_TRIM has 1680808 observations and 22 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           21.74 seconds
+      cpu time            11.30 seconds
+      
+
+283        
+284        data amex.elig_trim (drop = year elig_start_dt);
+285          set amex.elig_trim;
+286          by enrolid elig_start_dt;
+287          * Count months enrolled by year *;
+288          retain enrmon15 enrmon16 enrmon17 0;
+16                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+289          if first.enrolid then do;
+290            enrmon15 = 0;
+291        	enrmon16 = 0;
+292        	enrmon17 = 0;
+293          end;
+294        
+295               if year = 2015 then enrmon15 + 1;
+296          else if year = 2016 then enrmon16 + 1;
+297          else if year = 2017 then enrmon17 + 1;
+298        
+299          * Output 1 record per person *;
+300          * Keeps most recent age, sex, etc. *;
+301          if last.enrolid then do;
+302            * 12+ years old and enrolled 5/6 and 11/12 months *;
+303            if age_years >= 12 & enrmon15 >= 5 & enrmon16 >= 11 & enrmon17 >= 11;
+304        	output;
+305          end;
+306        run;
+
+NOTE: Character values have been converted to numeric values at the places given by: (Line):(Column).
+      295:11   296:11   297:11   
+NOTE: There were 1680808 observations read from the data set AMEX.ELIG_TRIM.
+NOTE: The data set AMEX.ELIG_TRIM has 36793 observations and 23 variables.
+NOTE: DATA statement used (Total process time):
+      real time           4.77 seconds
+      cpu time            0.00 seconds
+      
+
+307        
+308        * Note: no race in Am Ex data *;
+309        proc freq data=amex.elig_trim;
+310          title 'Eligibility Trimmed';
+311          tables age_years sex state_cd / missprint;
+312        run;
+
+NOTE: There were 36793 observations read from the data set AMEX.ELIG_TRIM.
+NOTE: The PROCEDURE FREQ printed pages 4986-4988.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.11 seconds
+      cpu time            0.00 seconds
+      
+
+313        
+314        ** Claims **;
+315        ** Limit to members in Elig dataset **;
+316        proc sql;
+317          create table amex.claim_trim as
+318          select b.*
+319          from amex.elig_trim as a inner join amex.claims as b
+320          on a.enrolid = b.enrolid;
+NOTE: Table AMEX.CLAIM_TRIM created, with 3332946 rows and 62 columns.
+
+321        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           57.28 seconds
+      cpu time            4.00 seconds
+      
+
+17                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+322        
+323        * Separate claims by year like Marketscan *;
+324        %macro claims(yr);
+325          data amex.claims&yr;
+326            set amex.claim_trim (where = (year(svcdate) = &yr));
+327            * Initialize *;
+328            opioid         = 0;	  naloxone       = 0;
+329            buprenorphine  = 0;	  methadone      = 0;
+330            short_acting   = 0;	  long_acting    = 0;
+331            fentanyl       = 0;	  benzodiazepine = 0;
+332            naltrexone     = 0;	  antidepressant = 0;
+333            antipsychotic  = 0;	  op_lax         = 0;
+334            nat_opioid     = 0;	  semi_opioid    = 0;
+335            syn_opioid     = 0;	  barbiturate    = 0;
+336            good_pot       = 0;	  bad_pot        = 0;
+337            muscle         = 0;	  gt7d           = 0;
+338            le7d           = 0;	  bup_meth_nalt  = 0;
+339            morphine       = 0;
+340            sud         = 0;		  oud          = 0;
+341            nas         = 0;		  nas_mom      = 0;
+342            mh          = 0;		  oudr         = 0;
+343            adv         = 0;		  treat        = 0;
+344            treat_rx    = 0;		  cancer       = 0;
+345            hospice     = 0;		  od           = 0;
+346            morphine_px = 0;	  	  death        = 0;
+347            mal_neo     = 0;		  oth_neo      = 0;
+348            hx_neo      = 0;	      pcp          = 0;
+349            ed          = 0;
+350            * Set drug flags *;
+351            if daysupp > 0 then do;
+352        	  if put(generid,antidep_generid.      ) = 'antidep_generid'       then antidepressant = 1;
+353        	  if put(generid,antipsy_generid.      ) = 'antipsy_generid'       then antipsychotic  = 1;
+354        	  if put(generid,benzo_generid.        ) = 'benzo_generid'         then benzodiazepine = 1;
+355        	  if put(generid,op_lax_generid.       ) = 'op_lax_generid'        then op_lax         = 1;
+356              if put(generid,nat_opioid_generid.   ) = 'nat_opioid_generid'    then nat_opioid     = 1;
+357        	  if put(generid,semi_opioid_generid.  ) = 'semi_opioid_generid'   then semi_opioid    = 1;
+358        	  if put(generid,syn_opioid_generid.   ) = 'syn_opioid_generid'    then syn_opioid     = 1;
+359        	  if nat_opioid | semi_opioid | syn_opioid                         then opioid         = 1;
+360        	  if put(generid,barb_generid.         ) = 'barb_generid'          then barbiturate    = 1;
+361        	  if put(generid,good_pot_generid.     ) = 'good_pot_generid'      then good_pot       = 1;
+362        	  if put(generid,bad_pot_generid.      ) = 'bad_pot_generid'       then bad_pot        = 1;
+363        	  if put(generid,nalox_generid.        ) = 'nalox_generid'         then naloxone       = 1;
+364              if put(generid,bupren_generid.       ) = 'bupren_generid'        then buprenorphine  = 1;
+365        	  if put(generid,meth_generid.         )    = 'meth_generid'       then methadone      = 1;
+366        	  if put(generid,long_acting_generid.  ) = 'long_acting_generid'   then long_acting    = 1;
+367        	  if opioid = 1 and long_acting = 0                                then short_acting   = 1;
+368        	  if put(generid,fent_generid.         ) = 'fent_generid'          then fentanyl       = 1;
+369        	  if put(generid,naltrex_generid.      ) = 'naltrex_generid'       then naltrexone     = 1;
+370        	  if put(generid,muscle_generid.       ) = 'muscle_generid'        then muscle         = 1;
+371        	  if put(generid,bup_meth_nalt_generid.) = 'bup_meth_nalt_generid' then bup_meth_nalt  = 1;
+372              if put(generid,morphine_generid.     ) = 'morphine_generid'      then morphine       = 1;
+373            end;
+374                 if      daysupp > 7 then gt7d = 1;
+375            else if 1 <= daysupp <=7 then le7d = 1;
+376            * Diagnosis Array *;
+377            array diag{10} $ dx1-dx10;
+378            if dxver = '' then dxver = '9';
+379            * Set dx flags *;
+18                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+380            do i = 1 to 10;
+381              * ICD 9 *;
+382        	  if dxver = '9' then do;
+383        	    if diag{i} in &sud9     then sud      = 1;
+384        	    if diag{i} in &oud9     then oud      = 1;
+385        	    if diag{i} in &nas9     then nas      = 1;
+386        	    if diag{i} in &nas_mom9 then nas_mom  = 1;
+387        	    if put(diag{i},$MH_DX_ICD9CM.)        = 'MH_Dx_ICD9CM'        then mh      = 1;
+388        	    if put(diag{i},$MAL_NEO_ICD9CM.)      = 'Mal_Neo_ICD9CM'      then mal_neo = 1;
+389                if put(diag{i},$OTH_NEO_ICD9CM.)      = 'Oth_Neo_ICD9CM'      then oth_neo = 1;
+390                if put(diag{i},$HX_MALIG_NEO_ICD9CM.) = 'Hx_Malig_Neo_ICD9CM' then hx_neo  = 1;
+391                if diag{i} in &oudr9 then oudr    = 1;
+392        	    if diag{i} in &adv9  then adv     = 1;
+393        	    if diag{i} in &od9   then od      = 1;
+394        	  end;
+395        	  * ICD 10 *;
+396        	  else if dxver = '0' then do;
+397        	    if diag{i} in &sud10     then sud      = 1;
+398        	    if diag{i} in &oud10     then oud      = 1;
+399        	    if diag{i} in &nas10     then nas      = 1;
+400        	    if diag{i} in &nas_mom10 then nas_mom  = 1;
+401        	    if put(diag{i},$MH_DX_ICD10CM.)        = 'MH_Dx_ICD10CM'        then mh      = 1;
+402        	    if put(diag{i},$MAL_NEO_ICD10CM.)      = 'Mal_Neo_ICD10CM'      then mal_neo = 1;
+403                if put(diag{i},$OTH_NEO_ICD10CM.)      = 'Oth_Neo_ICD10CM'      then oth_neo = 1;
+404                if put(diag{i},$HX_MALIG_NEO_ICD10CM.) = 'Hx_Malig_Neo_ICD10CM' then hx_neo  = 1;
+405        	    if diag{i} in &oudr10 then oudr    = 1;
+406        	    if diag{i} in &adv10  then adv     = 1;
+407        	    if diag{i} in &od10   then od      = 1;
+408        	  end;
+409            end;
+410            if mal_neo | oth_neo | hx_neo then cancer = 1;
+411            * Hospice_Morphine *;
+412            if proc_system_cd in ('1','7') then do;
+413                   if proc1 in &excl_hospice_c then hospice  = 1;
+414        	  else if proc1 in &morph          then morphine_px = 1;
+415        	  else if proc1 in &trt_rx then    treat_rx      = 1;
+416            end;
+417            else do;
+418              if proc1 in &trt_px then treat    = 1;
+419            end;
+420            if revcode in &excl_hospice_r then hospice = 1;
+421            else if put(revcode,$ED_UBREV.) = 'ED_UBREV' then ed      = 1;
+422            if stdprov in (200, 202, 204, 206, 240, 245, 400, 410, 825, 845) then pcp = 1;
+423            if dstatus = '20' then death = 1;
+424          run;
+425        %mend claims;
+426        %claims(2015);
+
+NOTE: Character values have been converted to numeric values at the places given by: (Line):(Column).
+      426:239   
+NOTE: Variable generid is uninitialized.
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=09/23/2015 tsvcdat=12/31/1864 paiddt=10/08/2015 enrolid=s0iho2XfoqtosovbMl claim_id=00000090414620150923 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=5511106830 npi_id=  prov_id=1 prov_name=1831293729 std_hosp=CVS PHARMACY #00069 ord_prov_name=1043422777
+epi_id=~ adm_id=25508021298701 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=3.71 chg=10.56 netpay=3.71 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2808040030 stdplac=59 mdst_prov_type_cd=18312937 stdprov=Pharmacy npi=935
+19                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+ord_prov=~ daysupp=. rx_refill_nbr=10 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=1
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=09/16/2015 tsvcdat=12/31/1864 paiddt=10/08/2015 enrolid=s0iho2XW63hosovb3P claim_id=00000991987420150916 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0007461239 npi_id=  prov_id=1 prov_name=1063645026 std_hosp=EXPRESS SCRIPTS ord_prov_name=1780761957
+epi_id=~ adm_id=25450071278501 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=127.86 chg=127.86 netpay=127.86 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2406010045 stdplac=53 mdst_prov_type_cd=10636450 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=2
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=12/22/2015 tsvcdat=12/31/1864 paiddt=01/14/2016 enrolid=s0ihiUafy3Tos1fbhP claim_id=00000073437320151222 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0059120703 npi_id=  prov_id=1 prov_name=1285913525 std_hosp=BGC PHARMACY LLC ord_prov_name=1962483081
+epi_id=~ adm_id=25134981278501 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=350.51 chg=638.51 netpay=350.51 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=8408010080 stdplac=196 mdst_prov_type_cd=12859135 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=3 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=3
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=10/30/2015 tsvcdat=12/31/1864 paiddt=11/19/2015 enrolid=s0ihisFsyotosXtbuP claim_id=00000405536620151030 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=2315501780 npi_id=  prov_id=1 prov_name=1306851639 std_hosp=WALGREENS #03477 ord_prov_name=1124249560
+epi_id=~ adm_id=25294711278502 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=8.41 chg=43.7 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0.84 copay=0.84 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2412010045 stdplac=55 mdst_prov_type_cd=13068516 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=2 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=4
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=10/20/2015 tsvcdat=12/31/1864 paiddt=11/05/2015 enrolid=s0ihosob2hToslWbQl claim_id=00000615025920151020 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=5011104330 npi_id=  prov_id=1 prov_name=1790852374 std_hosp=FRYS FOOD AND DRUG #78
+ord_prov_name=1104931583 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=6.99 chg=97.6 netpay=5.59 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=1.4 copay=1.4 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2816040855 stdplac=69 mdst_prov_type_cd=17908523
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0
+methadone=0 short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0
+nat_opioid=0 semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0
+oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0
+hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1 _N_=5
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=11/02/2015 tsvcdat=12/31/1864 paiddt=11/19/2015 enrolid=s0iho2PE0ThosXEyTl claim_id=00000689783120151102 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=5167240310 npi_id=  prov_id=1 prov_name=1699797258 std_hosp=CVS PHARMACY # ord_prov_name=1811015704
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=6 chg=30.59
+netpay=5.4 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0.6 copay=0.6 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp= 
+20                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075
+mdc=50175 int_ther_class_cd=2012040050 stdplac=39 mdst_prov_type_cd=16997972 stdprov=Pharmacy npi=935 ord_prov=~ daysupp=.
+rx_refill_nbr=30 compound_cd=3 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0 short_acting=0 long_acting=0
+fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0 semi_opioid=0 syn_opioid=0
+barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0
+treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1
+_N_=6
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=08/29/2015 tsvcdat=12/31/1864 paiddt=09/24/2015 enrolid=s0ihoslvLhgoslvyhl claim_id=00000946575720150829 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=4354703375 npi_id=  prov_id=1 prov_name=1245251214 std_hosp=EXPRESS SCRIPTS ord_prov_name=1588628671
+epi_id=~ adm_id=25695971278502 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=5.62 chg=5.62 netpay=5.62 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2404040010 stdplac=47 mdst_prov_type_cd=12452512 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=4 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=7
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=10/07/2015 tsvcdat=12/31/1864 paiddt=10/22/2015 enrolid=s0ihi2oobhtosXvb3l claim_id=00000241856720151007 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6472001361 npi_id=  prov_id=1 prov_name=1578502951 std_hosp=OSCO DRUG #0004 ord_prov_name=1821190570
+epi_id=~ adm_id=24951881278502 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=66.3 chg=186.12 netpay=59.67 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=6.63 copay=6.63 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2820040010 stdplac=71 mdst_prov_type_cd=15785029 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=8
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=09/23/2015 tsvcdat=12/31/1864 paiddt=10/08/2015 enrolid=s0ihi2oWoiTosoobJl claim_id=00000087514720150923 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0007437279 npi_id=  prov_id=1 prov_name=1063645026 std_hosp=EXPRESS SCRIPTS ord_prov_name=1841259322
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=83.17
+chg=83.17 netpay=9 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=1 copay=1 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp= 
+dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5072
+mdc=50172 int_ther_class_cd=6836040040 stdplac=178 mdst_prov_type_cd=10636450 stdprov=Pharmacy npi=935 ord_prov=~ daysupp=.
+rx_refill_nbr=90 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0 short_acting=0 long_acting=0
+fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0 semi_opioid=0 syn_opioid=0
+barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0
+treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1
+_N_=9
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=10/25/2015 tsvcdat=12/31/1864 paiddt=11/19/2015 enrolid=s0iho2cv2Mhos1tbJl claim_id=00000250599920151025 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0059132020 npi_id=  prov_id=1 prov_name=1447265772 std_hosp=WALGREENS #4508 ord_prov_name=1679680045
+epi_id=~ adm_id=25512971308201 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=4.21 chg=10.14 netpay=3.79 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0.42 copay=0.42 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2808080020 stdplac=60 mdst_prov_type_cd=14472657 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=2 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=10
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=12/02/2015 tsvcdat=12/31/1864 paiddt=12/31/2015 enrolid=s0ihiFFd0i5osGtyTl claim_id=00000193161620151202 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6438007370 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1871524892
+21                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+epi_id=~ adm_id=25012381307901 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=3.47 chg=3.47 netpay=3.47 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=8816010035 stdplac=224 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=84 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=11
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=10/27/2015 tsvcdat=12/31/1864 paiddt=11/19/2015 enrolid=s0ihoscf0q5osPWbMP claim_id=00000072298220151027 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0059103470 npi_id=  prov_id=1 prov_name=1013978865 std_hosp=LAVIDA PHARMACY ord_prov_name=1780642819
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=2.96 chg=13.7
+netpay=2.37 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0.59 copay=0.59 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp= 
+dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075
+mdc=50175 int_ther_class_cd=4028120060 stdplac=124 mdst_prov_type_cd=10139788 stdprov=Pharmacy npi=935 ord_prov=~ daysupp=.
+rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0 short_acting=0 long_acting=0
+fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0 semi_opioid=0 syn_opioid=0
+barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0
+treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1
+_N_=12
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=08/04/2015 tsvcdat=12/31/1864 paiddt=08/27/2015 enrolid=s0ihosPdbqlosoWbql claim_id=00000142685920150804 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6275605118 npi_id=  prov_id=1 prov_name=1811902067 std_hosp=WALGREENS #5008 ord_prov_name=1700991460
+epi_id=~ adm_id=25602961278501 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=11.4 chg=544.39 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=2.28 copay=2.28 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=1006010120 stdplac=262 mdst_prov_type_cd=18119020 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=2 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=13
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=08/19/2015 tsvcdat=12/31/1864 paiddt=09/10/2015 enrolid=s0ihosoobJlosXsbol claim_id=00000100919420150819 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=1671406520 npi_id=  prov_id=1 prov_name=1275546111 std_hosp=HARMONS PHARMACY ord_prov_name=1780602045
+epi_id=~ adm_id=25719081301301 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=15.6 chg=69.76 netpay=14.04 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=1.56 copay=1.56 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=822010010 stdplac=16 mdst_prov_type_cd=12755461 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=10 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=14
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=10/12/2015 tsvcdat=12/31/1864 paiddt=11/05/2015 enrolid=s0ihiUXoLqQosabbQP claim_id=00000303476020151012 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0017306822 npi_id=  prov_id=1 prov_name=1356356331 std_hosp=WALGREENS #1879 ord_prov_name=1992706311
+epi_id=~ adm_id=25071511278501 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=91.65 chg=109.51 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=91.65 copay=0 deduct=0 proc1=91.65 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=1212010005 stdplac=27 mdst_prov_type_cd=13563563 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=15
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+22                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+svcdate=11/18/2015 tsvcdat=12/31/1864 paiddt=12/03/2015 enrolid=s0ihi2ovtJ5os1sbhl claim_id=00000090340620151118 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=1366800813 npi_id=  prov_id=1 prov_name=1801807458 std_hosp=HUNTINGTON DRUGS ord_prov_name=1700883899
+epi_id=~ adm_id=24964041310601 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=6.81 chg=151.8 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=6.81 copay=0 deduct=0 proc1=6.81 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=4810240050 stdplac=248 mdst_prov_type_cd=18018074 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=16
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=12/31/2015 tsvcdat=12/31/1864 paiddt=01/28/2016 enrolid=s0ihosFf2oTosXEb3l claim_id=00000379469720151231 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0007437279 npi_id=  prov_id=1 prov_name=1063645026 std_hosp=EXPRESS SCRIPTS ord_prov_name=1679564512
+epi_id=~ adm_id=25535511278501 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=10 chg=10 netpay=10 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=6836040040 stdplac=178 mdst_prov_type_cd=10636450 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=17
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=08/11/2015 tsvcdat=12/31/1864 paiddt=08/27/2015 enrolid=s0iho2cvLMQosodbql claim_id=00000070558620150811 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=5374602180 npi_id=  prov_id=1 prov_name=1760498406 std_hosp=WALGREENS #6095 ord_prov_name=1689667461
+epi_id=~ adm_id=25515361278504 mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=1.65 chg=22.07 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=6820040130 stdplac=174 mdst_prov_type_cd=17604984 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=18
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+svcdate=08/14/2015 tsvcdat=12/31/1864 paiddt=08/27/2015 enrolid=s0ihiFXvyhTosGEbul claim_id=00000263418520150814 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0040601250 npi_id=  prov_id=1 prov_name=1770508301 std_hosp=SMITHS PHARMACY #137 ord_prov_name=1750494548
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=8.09 chg=30.29
+netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=8.09 copay=0 deduct=0 proc1=8.09 proc_system_cd=  proc_cat_cd=  procgrp=  dxcat= 
+clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175
+int_ther_class_cd=2808080020 stdplac=60 mdst_prov_type_cd=17705083 stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=30
+compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0 short_acting=0 long_acting=0 fentanyl=0
+benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0 semi_opioid=0 syn_opioid=0 barbiturate=0
+good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0 treat=0
+treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1 _N_=19
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 426 column 239.
+WARNING: Limit set by ERRORS= option reached.  Further errors of this type will not be printed.
+svcdate=09/08/2015 tsvcdat=12/31/1864 paiddt=10/08/2015 enrolid=s0ihisooZu1ost1boP claim_id=00000138520620150908 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0011620011 npi_id=  prov_id=1 prov_name=1447360078 std_hosp=COSTCO PHARMACY ord_prov_name=1942207048
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2015 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=-4.88
+chg=-11.36 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=-4.88 copay=0 deduct=0 proc1=-4.88 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=8436200020 stdplac=207 mdst_prov_type_cd=14473600 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=-30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+23                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+generid=. i=11 _ERROR_=1 _N_=20
+NOTE: There were 675369 observations read from the data set AMEX.CLAIM_TRIM.
+      WHERE YEAR(svcdate)=2015;
+NOTE: The data set AMEX.CLAIMS2015 has 675369 observations and 106 variables.
+NOTE: DATA statement used (Total process time):
+      real time           30.14 seconds
+      cpu time            3.36 seconds
+      
+
+427        %claims(2016);
+
+NOTE: Character values have been converted to numeric values at the places given by: (Line):(Column).
+      427:239   
+NOTE: Variable generid is uninitialized.
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=09/25/2016 tsvcdat=12/31/1864 paiddt=10/20/2016 enrolid=s0ihfs1WtMQosXfyTl claim_id=00000886028420160925 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0060357632 npi_id=  prov_id=1 prov_name=1306868088 std_hosp=CVS PHARMACY # ord_prov_name=1033194196
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=7.91 chg=42.44
+netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=7.77 copay=7.77 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp= 
+dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075
+mdc=50175 int_ther_class_cd=4028100020 stdplac=123 mdst_prov_type_cd=13068680 stdprov=Pharmacy npi=935 ord_prov=~ daysupp=.
+rx_refill_nbr=30 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0 short_acting=0 long_acting=0
+fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0 semi_opioid=0 syn_opioid=0
+barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0
+treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1
+_N_=1
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=06/17/2016 tsvcdat=12/31/1864 paiddt=07/14/2016 enrolid=s0ihiUlb43los11bql claim_id=00000486512020160617 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0059136850 npi_id=  prov_id=1 prov_name=1649352006 std_hosp=EXPRESS SCRIPTS ord_prov_name=1902865116
+epi_id=~ adm_id=25108031330701 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=56.03 chg=56.03 netpay=56.03 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=836010055 stdplac=19 mdst_prov_type_cd=16493520 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=2
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=08/31/2016 tsvcdat=12/31/1864 paiddt=09/22/2016 enrolid=s0ihi2l1bJQosoWyTP claim_id=00000280521920160831 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=4950205000 npi_id=  prov_id=1 prov_name=1891700134 std_hosp=WALGREENS #3048 ord_prov_name=1104921048
+epi_id=~ adm_id=24863111342301 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=608.95 chg=731.28 netpay=548.05 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=60.9 copay=60.9 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=1212010035 stdplac=27 mdst_prov_type_cd=18917001 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=1 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=3
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=11/12/2016 tsvcdat=12/31/1864 paiddt=12/01/2016 enrolid=s0iho2Fb4h1osldbil claim_id=00000071162220161112 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6050500800 npi_id=  prov_id=1 prov_name=1386753622 std_hosp=RITE AID PHARMACY 02390
+ord_prov_name=1104897990 epi_id=~ adm_id=25456581315003 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=34.46 chg=257.16 netpay=27.57 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=6.89 copay=6.89 deduct=0
+proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~
+dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2404160120 stdplac=51 mdst_prov_type_cd=13867536
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=50 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0
+24                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+methadone=0 short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0
+nat_opioid=0 semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0
+oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0
+hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1 _N_=4
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=01/13/2016 tsvcdat=12/31/1864 paiddt=01/28/2016 enrolid=s0ihosl1bqgosafbQP claim_id=00000044062420160113 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6668510020 npi_id=  prov_id=1 prov_name=1427153261 std_hosp=CVS PHARMACY ord_prov_name=1790739969
+epi_id=~ adm_id=25671411316201 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=11.55 chg=76.49 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=11.55 copay=0 deduct=0 proc1=11.55 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=812160005 stdplac=10 mdst_prov_type_cd=14271532 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=10 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=5
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=09/24/2016 tsvcdat=12/31/1864 paiddt=10/20/2016 enrolid=s0ihi2o1bQPosX1yhl claim_id=00000061481820160924 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0037819121 npi_id=  prov_id=1 prov_name=1265605539 std_hosp=WALGREENS #10678 ord_prov_name=1124123823
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=1.8 chg=26.09
+netpay=1.8 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp=  dxcat= 
+clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175
+int_ther_class_cd=2812080015 stdplac=64 mdst_prov_type_cd=12656055 stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=15
+compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0 short_acting=0 long_acting=0 fentanyl=0
+benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0 semi_opioid=0 syn_opioid=0 barbiturate=0
+good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0 treat=0
+treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1 _N_=6
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=04/29/2016 tsvcdat=12/31/1864 paiddt=05/19/2016 enrolid=s0ihosGE4ilosotbQP claim_id=00000592687520160429 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=5388502451 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1033178694
+epi_id=~ adm_id=25548951315002 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=220.54 chg=220.54 netpay=198.49 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=22.05 copay=22.05 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=3626010005 stdplac=85 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=3 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=7
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=10/26/2016 tsvcdat=12/31/1864 paiddt=11/17/2016 enrolid=s0ihosPoyhtosltyQl claim_id=00000127019020161026 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6131402271 npi_id=  prov_id=1 prov_name=1154424927 std_hosp=CVS PHARMACY ord_prov_name=1932125424
+epi_id=~ adm_id=25604771315001 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=9.75 chg=49.7 netpay=7.8 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=1.95 copay=1.95 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=5236010130 stdplac=146 mdst_prov_type_cd=11544249 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=84 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=8
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=03/08/2016 tsvcdat=12/31/1864 paiddt=03/24/2016 enrolid=s0ihi2lbtM1os1dbQl claim_id=00000404199320160308 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0009301501 npi_id=  prov_id=1 prov_name=1689614067 std_hosp=PUBLIX PHARMACY #0805
+ord_prov_name=1841213055 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=6.74 chg=9.33 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=6.74 copay=0 deduct=0 proc1=6.74 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2808080010 stdplac=60 mdst_prov_type_cd=16896140 stdprov=Pharmacy npi=935
+25                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+ord_prov=~ daysupp=. rx_refill_nbr=7 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=9
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=05/08/2016 tsvcdat=12/31/1864 paiddt=06/02/2016 enrolid=s0ihoscvZqtoslobql claim_id=00000287869020160508 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=4359805109 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1033281191
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=379.52
+chg=379.52 netpay=374.52 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=5 copay=0 deduct=5 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=5655000050 stdplac=162 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=10
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=08/11/2016 tsvcdat=12/31/1864 paiddt=08/25/2016 enrolid=s0ihOOtbouhosP1yQP claim_id=00000116473620160811 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6075801191 npi_id=  prov_id=1 prov_name=1063645026 std_hosp=EXPRESS SCRIPTS ord_prov_name=1780720219
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=78.94
+chg=78.94 netpay=73.94 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=5 copay=0 deduct=5 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=5208010060 stdplac=138 mdst_prov_type_cd=10636450 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=13 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=11
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=04/01/2016 tsvcdat=12/31/1864 paiddt=04/21/2016 enrolid=s0iho2osbM5osotbol claim_id=00000119853720160401 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=5931005792 npi_id=  prov_id=1 prov_name=1609882349 std_hosp=WALGREENS #4742 ord_prov_name=1124056502
+epi_id=~ adm_id=25509111315002 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=53.29 chg=64.42 netpay=47.96 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=5.33 copay=5.33 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=1212010005 stdplac=27 mdst_prov_type_cd=16098823 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=17 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=12
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=08/01/2016 tsvcdat=12/31/1864 paiddt=08/25/2016 enrolid=s0ihosa1ti5osFWbQl claim_id=00000207802420160801 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=1366801151 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1912964073
+epi_id=~ adm_id=25624011315004 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=25 chg=8.06 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=25 copay=0 deduct=25 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2404010040 stdplac=46 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=13
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=03/04/2016 tsvcdat=12/31/1864 paiddt=03/24/2016 enrolid=s0ihistttutos1sbQl claim_id=00000133126520160304 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6516205361 npi_id=  prov_id=1 prov_name=1669488052 std_hosp=WALGREENS #6352 ord_prov_name=1124016332
+epi_id=~ adm_id=25446301315001 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=7.22 chg=53.35 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=7.22 copay=0 deduct=0 proc1=7.22 proc_system_cd=  proc_cat_cd= 
+26                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=4808010010 stdplac=128 mdst_prov_type_cd=16694880 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=7 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=14
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=05/21/2016 tsvcdat=12/31/1864 paiddt=06/16/2016 enrolid=s0iho2ooZh5osXWbol claim_id=00000054938120160521 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0009300740 npi_id=  prov_id=1 prov_name=1013142074 std_hosp=CVS PHARMACY #05983 ord_prov_name=1982697637
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=1.67
+chg=139.56 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=1.67 copay=0 deduct=0 proc1=1.67 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2824920090 stdplac=75 mdst_prov_type_cd=10131420 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=3 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=15
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=06/08/2016 tsvcdat=12/31/1864 paiddt=06/30/2016 enrolid=s0ihosGE4ilosotbQP claim_id=00000668181220160608 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0059108450 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1033178694
+epi_id=~ adm_id=25548951315002 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=24.42 chg=24.42 netpay=24.42 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=6820200030 stdplac=173 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=16
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=11/15/2016 tsvcdat=12/31/1864 paiddt=12/01/2016 enrolid=s0ihosFdyQlosFWyTP claim_id=00000476824220161115 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6909701281 npi_id=  prov_id=1 prov_name=1649352006 std_hosp=EXPRESS SCRIPTS ord_prov_name=1760472351
+epi_id=~ adm_id=25566201315002 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=8.35 chg=8.35 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=8.35 copay=8.35 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2404200005 stdplac=52 mdst_prov_type_cd=16493520 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=17
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=03/21/2016 tsvcdat=12/31/1864 paiddt=04/07/2016 enrolid=s0ihiUlb2hWosGvbil claim_id=00000027933420160321 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0009375420 npi_id=  prov_id=1 prov_name=1457377574 std_hosp=DUANE READE #14104 ord_prov_name=1811130040
+epi_id=~ adm_id=25145521316001 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=21.84 chg=210.75 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=21.84 copay=0 deduct=0 proc1=21.84 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2816040045 stdplac=69 mdst_prov_type_cd=14573775 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=18
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+svcdate=01/31/2016 tsvcdat=12/31/1864 paiddt=02/25/2016 enrolid=s0ihisobbu5oso1yhl claim_id=00000755846020160131 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=3172202080 npi_id=  prov_id=1 prov_name=1063645026 std_hosp=EXPRESS SCRIPTS ord_prov_name=1811124514
+27                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+epi_id=~ adm_id=25410281315001 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=4.19 chg=4.19 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=4.19 copay=0 deduct=0 proc1=4.19 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2816040040 stdplac=69 mdst_prov_type_cd=10636450 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=19
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 427 column 239.
+WARNING: Limit set by ERRORS= option reached.  Further errors of this type will not be printed.
+svcdate=06/21/2016 tsvcdat=12/31/1864 paiddt=07/14/2016 enrolid=s0ihoscs0qWosFoyhl claim_id=00000960169820160621 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0005401971 npi_id=  prov_id=1 prov_name=1932587250 std_hosp=MISSION PHCY - LAKE TOXAWAY
+ord_prov_name=1649228578 epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~
+cap_svc_ind=N pay=6.47 chg=70.27 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=6.47 copay=6.47 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=818010024 stdplac=14 mdst_prov_type_cd=19325872 stdprov=Pharmacy
+npi=935 ord_prov=~ daysupp=. rx_refill_nbr=4 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=20
+NOTE: There were 1317036 observations read from the data set AMEX.CLAIM_TRIM.
+      WHERE YEAR(svcdate)=2016;
+NOTE: The data set AMEX.CLAIMS2016 has 1317036 observations and 106 variables.
+NOTE: DATA statement used (Total process time):
+      real time           36.51 seconds
+      cpu time            4.87 seconds
+      
+
+428        %claims(2017);
+
+NOTE: Character values have been converted to numeric values at the places given by: (Line):(Column).
+      428:239   
+NOTE: Variable generid is uninitialized.
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=01/03/2017 tsvcdat=12/31/1864 paiddt=01/26/2017 enrolid=s0iho2Fb4oloslvbqP claim_id=00000221792420170103 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0005432709 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1770857088
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=7.37 chg=7.37
+netpay=2.37 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=5 copay=0 deduct=5 proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp=  dxcat= 
+clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5072 mdc=50172
+int_ther_class_cd=5208010036 stdplac=138 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=30
+compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0 short_acting=0 long_acting=0 fentanyl=0
+benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0 semi_opioid=0 syn_opioid=0 barbiturate=0
+good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0 treat=0
+treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1 _N_=1
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=12/15/2017 tsvcdat=12/31/1864 paiddt=01/11/2018 enrolid=s0iho2Fb4oloslvbqP claim_id=00000041903720171215 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=9830200020 npi_id=  prov_id=1 prov_name=1245251214 std_hosp=EXPRESS SCRIPTS ord_prov_name=1770857088
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2018 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=181.49
+chg=181.49 netpay=181.49 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=3626000000 stdplac=85 mdst_prov_type_cd=12452512 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=2
+28                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=10/30/2017 tsvcdat=12/31/1864 paiddt=11/16/2017 enrolid=s0ihihcf2qWosGvbJl claim_id=00000638683720171030 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0078171678 npi_id=  prov_id=1 prov_name=1336554112 std_hosp=INTEGRITY RX SPECIALTY PHCY
+ord_prov_name=1912932559 epi_id=~ adm_id=25232111377901 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=77.25 chg=160.87 netpay=77.25 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=6816010035 stdplac=170 mdst_prov_type_cd=13365541
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=28 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0
+methadone=0 short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0
+nat_opioid=0 semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0
+oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0
+hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1 _N_=3
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=03/03/2017 tsvcdat=12/31/1864 paiddt=03/23/2017 enrolid=s0ihi2FvZuWosGdboP claim_id=00000048676920170303 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6586201939 npi_id=  prov_id=1 prov_name=1649352006 std_hosp=EXPRESS SCRIPTS ord_prov_name=1104865922
+epi_id=~ adm_id=24824241351601 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=3.49 chg=3.49 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=3.49 copay=0 deduct=0 proc1=3.49 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2816040120 stdplac=69 mdst_prov_type_cd=16493520 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=4
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=11/09/2017 tsvcdat=12/31/1864 paiddt=11/30/2017 enrolid=s0ihosaW4Q5osXfbql claim_id=00000089159520171109 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6846201034 npi_id=  prov_id=1 prov_name=1881647105 std_hosp=KINGS PHARMACY ord_prov_name=1992929707
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=3.47 chg=14.96
+netpay=3.12 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0.35 copay=0.35 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd=  procgrp= 
+dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~ mdst_svc_subcat_cd=5075
+mdc=50175 int_ther_class_cd=812040015 stdplac=5 mdst_prov_type_cd=18816471 stdprov=Pharmacy npi=935 ord_prov=~ daysupp=.
+rx_refill_nbr=1 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0 short_acting=0 long_acting=0
+fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0 semi_opioid=0 syn_opioid=0
+barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0
+treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1
+_N_=5
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=07/06/2017 tsvcdat=12/31/1864 paiddt=07/27/2017 enrolid=s0ihoslv6QgosovbJP claim_id=00000937077020170706 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=1070200760 npi_id=  prov_id=1 prov_name=1245251214 std_hosp=EXPRESS SCRIPTS ord_prov_name=1932117124
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=755.95
+chg=755.95 netpay=680.35 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=75.6 copay=75.6 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2820040100 stdplac=71 mdst_prov_type_cd=12452512 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=6
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=04/13/2017 tsvcdat=12/31/1864 paiddt=05/04/2017 enrolid=s0ihislsy3gos11biP claim_id=00000179209720170413 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6438007370 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1033196506
+epi_id=~ adm_id=25399011351701 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=3.83 chg=3.83 netpay=3.83 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=8816010035 stdplac=224 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+29                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=7
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=06/06/2017 tsvcdat=12/31/1864 paiddt=06/29/2017 enrolid=s0ihi2ot23TosGEyhP claim_id=00000887041020170606 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6909701590 npi_id=  prov_id=1 prov_name=1881744126 std_hosp=CVS PHARMACY # ord_prov_name=1033358387
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=1.85
+chg=146.28 netpay=1.66 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0.19 copay=0.19 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2808040051 stdplac=59 mdst_prov_type_cd=18817441 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=8
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=09/06/2017 tsvcdat=12/31/1864 paiddt=09/21/2017 enrolid=s0ihi2PfoJWosXtbQl claim_id=00000635907620170906 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6043206041 npi_id=  prov_id=1 prov_name=1821030354 std_hosp=FRYS FOOD AND DRUG ord_prov_name=1912983008
+epi_id=~ adm_id=24798311376401 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=3.17 chg=10.95 netpay=2.85 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0.32 copay=0.32 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=401018000 stdplac=1 mdst_prov_type_cd=18210303 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=8 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=9
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=11/01/2017 tsvcdat=12/31/1864 paiddt=11/16/2017 enrolid=s0iho2od0JtosotbJl claim_id=00000614033520171101 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6818005120 npi_id=  prov_id=1 prov_name=1720003445 std_hosp=KROGER PHARMACY ord_prov_name=1124097126
+epi_id=~ adm_id=25500791351601 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=1.69 chg=20.2 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2404040060 stdplac=47 mdst_prov_type_cd=17200034 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=7 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=10
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=07/15/2017 tsvcdat=12/31/1864 paiddt=08/10/2017 enrolid=s0ihisGEtQTos1syhl claim_id=00000653129720170715 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=1070200110 npi_id=  prov_id=1 prov_name=1720021058 std_hosp=FRYS FOOD AND DRUG ord_prov_name=1043317050
+epi_id=~ adm_id=25329971351601 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=8.1 chg=56.13 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=8.1 copay=0 deduct=0 proc1=8.10 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2824920035 stdplac=75 mdst_prov_type_cd=17200210 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=11
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=05/08/2017 tsvcdat=12/31/1864 paiddt=06/01/2017 enrolid=s0ihiF1dZoWos1EyTl claim_id=00000021127920170508 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=3172208839 npi_id=  prov_id=1 prov_name=1952326431 std_hosp=DUANE READE #14118 ord_prov_name=1902994825
+epi_id=~ adm_id=24989521351601 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=43.58 chg=269.29 netpay=43.58 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2406010095 stdplac=53 mdst_prov_type_cd=19523264 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=2 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+30                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=12
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=12/28/2017 tsvcdat=12/31/1864 paiddt=01/11/2018 enrolid=s0ihi2PEtigosGbbil claim_id=00000061326820171228 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0055509740 npi_id=  prov_id=1 prov_name=1295740470 std_hosp=WALGREENS #7109 ord_prov_name=1033446018
+epi_id=~ adm_id=24791231387701 mdst_place_grp_cd=~ table=5 year_paid=2018 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=22.32 chg=52.37 netpay=22.32 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2820040010 stdplac=71 mdst_prov_type_cd=12957404 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=13
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=11/16/2017 tsvcdat=12/31/1864 paiddt=11/30/2017 enrolid=s0ihi2lWohPos1bbul claim_id=00000756141620171116 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=5186204943 npi_id=  prov_id=1 prov_name=1255496048 std_hosp=MEIJER PHARMACY #108 ord_prov_name=1033219399
+epi_id=~ adm_id=24906241383501 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=36.83 chg=92.05 netpay=0 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=36.83 copay=0 deduct=0 proc1=36.83 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=8406010042 stdplac=195 mdst_prov_type_cd=12554960 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=14
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=09/28/2017 tsvcdat=12/31/1864 paiddt=10/19/2017 enrolid=s0ihosFfou5osFobQl claim_id=00000239168820170928 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0078120810 npi_id=  prov_id=1 prov_name=1023064698 std_hosp=FRESENIUS MEDICAL CARE RX
+ord_prov_name=1033112818 epi_id=~ adm_id=25567291360201 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1
+dstatus=~ cap_svc_ind=N pay=65.41 chg=218.88 netpay=55.41 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=10 copay=0 deduct=10 proc1=.00
+proc_system_cd=  proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~
+drg=~ svcscat=~ mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=4012040010 stdplac=104 mdst_prov_type_cd=10230646
+stdprov=Pharmacy npi=935 ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0
+methadone=0 short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0
+nat_opioid=0 semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0
+oud=0 nas=0 nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0
+hx_neo=0 pcp=0 ed=0 generid=. i=11 _ERROR_=1 _N_=15
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=11/15/2017 tsvcdat=12/31/1864 paiddt=11/30/2017 enrolid=s0iho2Fv2QTosXtyhP claim_id=00000109288020171115 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6818005200 npi_id=  prov_id=1 prov_name=1831293729 std_hosp=CVS PHARMACY #00069 ord_prov_name=1790764843
+epi_id=~ adm_id=25471661351603 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=4.28 chg=37.78 netpay=4.28 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=2404040060 stdplac=47 mdst_prov_type_cd=18312937 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=16
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=08/28/2017 tsvcdat=12/31/1864 paiddt=09/21/2017 enrolid=s0ihoslE2q1osFtyTP claim_id=00000800853420170828 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=6438007630 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1568435089
+epi_id=~ adm_id=~ mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N pay=262.45
+chg=262.45 netpay=237.45 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=25 copay=0 deduct=25 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+31                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=5702000040 stdplac=234 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=2 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=17
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=08/19/2017 tsvcdat=12/31/1864 paiddt=09/07/2017 enrolid=s0ihiF1Wyhhos1fyTl claim_id=00000628212220170819 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=4279400180 npi_id=  prov_id=1 prov_name=1437190873 std_hosp=GERBES PHARMACY ord_prov_name=1568442267
+epi_id=~ adm_id=25000061351603 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=19.18 chg=24.71 netpay=17.26 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=1.92 copay=1.92 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=6836040045 stdplac=178 mdst_prov_type_cd=14371908 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=30 compound_cd=1 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=18
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+svcdate=03/12/2017 tsvcdat=12/31/1864 paiddt=04/06/2017 enrolid=s0ihosPd4iQosodboP claim_id=00000904568720170312 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=1366801151 npi_id=  prov_id=1 prov_name=1417376765 std_hosp=EXPRESS SCRIPTS ord_prov_name=1871512913
+epi_id=~ adm_id=25568591351601 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=8.26 chg=8.26 netpay=8.26 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd=  proc_cat_cd= 
+procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=2404010040 stdplac=46 mdst_prov_type_cd=14173767 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=19
+NOTE: Invalid numeric data, stdprov='Pharmacy' , at line 428 column 239.
+WARNING: Limit set by ERRORS= option reached.  Further errors of this type will not be printed.
+svcdate=11/08/2017 tsvcdat=12/31/1864 paiddt=11/30/2017 enrolid=s0ihi2Fd431os1Ebol claim_id=00000883187420171108 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0037807511 npi_id=  prov_id=1 prov_name=1952323610 std_hosp=CVS PHARMACY # ord_prov_name=1801877634
+epi_id=~ adm_id=24763071384101 mdst_place_grp_cd=~ table=5 year_paid=2017 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=2.35 chg=28.24 netpay=2.11 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0.24 copay=0.24 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5075 mdc=50175 int_ther_class_cd=1220040050 stdplac=29 mdst_prov_type_cd=19523236 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=17 compound_cd=0 revcode=~ rb_flag=~ opioid=0 naloxone=0 buprenorphine=0 methadone=0
+short_acting=0 long_acting=0 fentanyl=0 benzodiazepine=0 naltrexone=0 antidepressant=0 antipsychotic=0 op_lax=0 nat_opioid=0
+semi_opioid=0 syn_opioid=0 barbiturate=0 good_pot=0 bad_pot=0 muscle=0 gt7d=0 le7d=0 bup_meth_nalt=0 morphine=0 sud=0 oud=0 nas=0
+nas_mom=0 mh=0 oudr=0 adv=0 treat=0 treat_rx=0 cancer=0 hospice=0 od=0 morphine_px=0 death=0 mal_neo=0 oth_neo=0 hx_neo=0 pcp=0 ed=0
+generid=. i=11 _ERROR_=1 _N_=20
+NOTE: There were 1340541 observations read from the data set AMEX.CLAIM_TRIM.
+      WHERE YEAR(svcdate)=2017;
+NOTE: The data set AMEX.CLAIMS2017 has 1340541 observations and 106 variables.
+NOTE: DATA statement used (Total process time):
+      real time           36.69 seconds
+      cpu time            5.60 seconds
+      
+
+429        
+430        * QA *;
+431        proc freq data=amex.claims2016
+432          title "American Express: Claims 2016";
+             _____
+             22
+             202
+32                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+ERROR 22-322: Syntax error, expecting one of the following: ;, (, COMPRESS, DATA, FC, FORMCHAR, NLEVELS, NOPRINT, ORDER, PAGE.  
+ERROR 202-322: The option or parameter is not recognized and will be ignored.
+433          tables opioid naloxone buprenorphine methadone short_acting long_acting fentanyl benzodiazepine naltrexone
+433      ! antidepressant
+434              antipsychotic op_lax nat_opioid syn_opioid semi_opioid muscle bup_meth_nalt morphine deaclas
+435              opioid * gt7d
+ERROR: Variable DEACLAS not found.
+436              opioid * le7d
+437              dxcat mdc sud oud oudr adv od morphine_px treat treat_rx nas mh cancer hospice death mal_neo oth_neo
+438              hx_neo nas nas_mom pcp ed/ missprint;
+439        run;
+
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.14 seconds
+      cpu time            0.14 seconds
+      
+440        * Summarize by member *;
+441        * Assumes sorted by svcdate, so age will be age at last Rx *;
+442        %macro by_mbr(yr);
+443          data amex.claims_&yr._1 (keep = enrolid age sex opioid1 naloxone1 buprenorphine1 methadone1 short_acting1 long_acting1
+444              fentanyl1 benzodiazepine1 naltrexone1 antidepressant1 antipsychotic1 op_lax1 nat_opioid1 syn_opioid1 semi_opioid1
+445              op_benz op_dep op_psy op_lax opioid_days muscle1 good_pot1 bad_pot1 op_lax_c barbiturate1 muscle1 bup_meth_nalt1
+445      ! morphine1 trinity
+446             sud1 oud1 oudr1 adv1 od1 hospice1 morphine_px1 treat1 treat_rx1 death1 cancer1 mh1 nas1 nas_mom1 mdc20 mdc21 mdc19
+447              pcp1 ed1 ip1);
+448            set amex.claim_trim;
+449            by enrolid;
+450            * set flags by member *;
+451            retain opioid1 naloxone1 buprenorphine1 methadone1 short_acting1 long_acting1 fentanyl1 benzodiazepine1 naltrexone1
+452              antidepressant1 antipsychotic1 op_lax1 nat_opioid1 syn_opioid1 semi_opioid1 op_benz op_dep op_psy op_lax_c
+452      ! opioid_days
+453              bad_pot1 good_pot1 barbiturate1 muscle1 bup_meht_nalt1 morphine1 trinity
+454              sud1 oud1 oudr1 adv1 od1 morphine_px1 treat1 treat_rx1 hospice1 death1 cancer1 mh1 nas1 nas_mom1 mdc20 mdc19 mdc21
+454      ! pcp1 ed1 ip10;
+455            if first.enrolid then do;
+456              opioid1         = 0;	      naloxone1       = 0;
+457              buprenorphine1  = 0;	      methadone1      = 0;
+458              short_acting1   = 0;	      long_acting1    = 0;
+459              fentanyl1       = 0;	      benzodiazepine1 = 0;
+460              naltrexone1     = 0;	      antidepressant1 = 0;
+461              antipsychotic1  = 0;	      op_lax1         = 0;
+462              nat_opioid1     = 0;	      syn_opioid1     = 0;
+463              semi_opioid1    = 0;	      op_benz		  = 0;
+464              op_dep		  = 0;		  op_psy		  = 0;
+465        	  op_lax_c   	  = 0;		  opioid_days     = 0;
+466        	  bad_pot1        = 0;		  barbiturate1    = 0;
+467        	  good_pot1       = 0;		  muscle1         = 0;
+468        	  bup_meth_nalt1  = 0;	      morphine1       = 0;
+469        	  trinity         = 0;
+470        	  sud1         = 0;		oud1        = 0;
+471              oudr1        = 0;	    adv1        = 0;
+472              od1          = 0;	    hospice1    = 0;
+473        	  morphine_px1 = 0;		treat1      = 0;
+474        	  treat_rx1    = 0;		death1      = 0;
+475        	  cancer1      = 0;		mh1         = 0;
+476        	  nas1         = 0;		nas_mom1    = 0;
+477        	  mdc20        = 0;	    mdc19       = 0;
+33                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+478              mdc21        = 0;		pcp1        = 0;
+479        	  ed1          = 0;		ip1         = 0;
+480            end;
+481            * Count number of Rx per member *;
+482            if opioid         = 1 then do;
+483              opioid1         = 1;
+484              opioid_days = opioid_days + daysupp;
+485            end;
+486            if naloxone       = 1 then naloxone1       = 1;
+487            if buprenorphine  = 1 then buprenorphine1  = 1;
+488            if methadone      = 1 then methadone1      = 1;
+489            if short_acting   = 1 then short_acting1   = 1;
+490            if long_acting    = 1 then long_acting1    = 1;
+491            if fentanyl       = 1 then fentanyl1       = 1;
+492            if benzodiazepine = 1 then benzodiazepine1 = 1;
+493            if naltrexone     = 1 then naltrexone1     = 1;
+494            if antidepressant = 1 then antidepressant1 = 1;
+495            if antipsychotic  = 1 then antipsychotic1  = 1;
+496            if op_lax         = 1 then op_lax1         = 1;
+497            if nat_opioid     = 1 then nat_opioid1     = 1;
+498            if syn_opioid     = 1 then syn_opioid1     = 1;
+499            if semi_opioid    = 1 then semi_opioid1    = 1;
+500            if bad_pot        = 1 then bad_pot1        = 1;
+501            if good_pot       = 1 then good_pot1       = 1;
+502            if barbiturate    = 1 then barbiturate1    = 1;
+503            if muscle         = 1 then muscle1         = 1;
+504            if bup_meth_nalt  = 1 then bup_meth_nalt1  = 1;
+505            if morphine       = 1 then morphine1       = 1;
+506            if sud      then sud1      = 1;
+507            if oud      then oud1      = 1;
+508            if oudr     then oudr1     = 1;
+509            if adv      then adv1      = 1;
+510            if od       then od1       = 1;
+511            if hospice  then hospice1  = 1;
+512            if morphine_px then morphine_px1 = 1;
+513            if treat    then treat1    = 1;
+514            if treat_rx then treat_rx1 = 1;
+515            if death    then death1    = 1;
+516            if cancer   then cancer1   = 1;
+517            if mh       then mh1       = 1;
+518            if nas      then nas1      = 1;
+519            if nas_mom  then nas_mom1  = 1;
+520            if mdc = '20'   then mdc20 = 1;
+521            if mdc = '19'   then mdc19 = 1;
+522            if mdc = '21'   then mdc21 = 1;
+523            if pcp = 1      then pcp1  = 1;
+524            if ed  = 1      then ed1   = 1;
+525            if ip_op = 'IP' then ip1   = 1;;
+526            if last.enrolid then do;
+527              if opioid1 > 0 then do;
+528                if benzodiazepine1 > 0 then do;
+529                  op_benz  = 1;
+530        	      if muscle1 > 0 then trinity = 1;
+531        	    end;
+532        	    if antidepressant1 > 0 then op_dep   = 1;
+533        	    if antipsychotic1  > 0 then op_psy   = 1;
+534        	    if op_lax1         > 0 then op_lax_c = 1;
+535              end;
+34                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+536              output;
+537            end;
+538          run;
+539        %mend by_mbr;
+540        %by_mbr(2015);
+
+
+
+NOTE: Variable bup_meht_nalt1 is uninitialized.
+NOTE: Variable ip10 is uninitialized.
+NOTE: Variable opioid is uninitialized.
+NOTE: Variable naloxone is uninitialized.
+NOTE: Variable buprenorphine is uninitialized.
+NOTE: Variable methadone is uninitialized.
+NOTE: Variable short_acting is uninitialized.
+NOTE: Variable long_acting is uninitialized.
+NOTE: Variable fentanyl is uninitialized.
+NOTE: Variable benzodiazepine is uninitialized.
+NOTE: Variable naltrexone is uninitialized.
+NOTE: Variable antidepressant is uninitialized.
+NOTE: Variable antipsychotic is uninitialized.
+NOTE: Variable op_lax is uninitialized.
+NOTE: Variable nat_opioid is uninitialized.
+NOTE: Variable syn_opioid is uninitialized.
+NOTE: Variable semi_opioid is uninitialized.
+NOTE: Variable bad_pot is uninitialized.
+NOTE: Variable good_pot is uninitialized.
+NOTE: Variable barbiturate is uninitialized.
+NOTE: Variable muscle is uninitialized.
+NOTE: Variable bup_meth_nalt is uninitialized.
+NOTE: Variable morphine is uninitialized.
+NOTE: Variable sud is uninitialized.
+NOTE: Variable oud is uninitialized.
+NOTE: Variable oudr is uninitialized.
+NOTE: Variable adv is uninitialized.
+NOTE: Variable od is uninitialized.
+NOTE: Variable hospice is uninitialized.
+NOTE: Variable morphine_px is uninitialized.
+NOTE: Variable treat is uninitialized.
+NOTE: Variable treat_rx is uninitialized.
+NOTE: Variable death is uninitialized.
+NOTE: Variable cancer is uninitialized.
+NOTE: Variable mh is uninitialized.
+NOTE: Variable nas is uninitialized.
+NOTE: Variable nas_mom is uninitialized.
+NOTE: Variable pcp is uninitialized.
+NOTE: Variable ed is uninitialized.
+NOTE: Variable ip_op is uninitialized.
+WARNING: The variable age in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable sex in the DROP, KEEP, or RENAME list has never been referenced.
+ERROR: BY variables are not properly sorted on data set AMEX.CLAIM_TRIM.
+svcdate=06/17/2016 tsvcdat=12/31/1864 paiddt=07/14/2016 enrolid=s0ihiUlb43los11bql claim_id=00000486512020160617 mdst_prov_type= 
+ndcnum=~ dtl_ther_class_cd=0059136850 npi_id=  prov_id=1 prov_name=1649352006 std_hosp=EXPRESS SCRIPTS ord_prov_name=1902865116
+epi_id=~ adm_id=25108031330701 mdst_place_grp_cd=~ table=5 year_paid=2016 employer_cd=2858 line_nbr=-1 dstatus=~ cap_svc_ind=N
+pay=56.03 chg=56.03 netpay=56.03 paid_in_ntwk_ind=Y ntwk_prov_ind=Y coins=0 copay=0 deduct=0 proc1=.00 proc_system_cd= 
+proc_cat_cd=  procgrp=  dxcat=  clincond=~ dx1=~ dx2=~ dx3=~ dx4=~ dx5=~ dx6=~ dx7=~ dx8=~ dx9=~ dx10=~ dxver=~ drg=~ svcscat=~
+mdst_svc_subcat_cd=5072 mdc=50172 int_ther_class_cd=836010055 stdplac=19 mdst_prov_type_cd=16493520 stdprov=Pharmacy npi=935
+ord_prov=~ daysupp=. rx_refill_nbr=90 compound_cd=0 revcode=~ rb_flag=~ FIRST.enrolid=1 LAST.enrolid=1 opioid1=0 naloxone1=0
+35                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+buprenorphine1=0 methadone1=0 short_acting1=0 long_acting1=0 fentanyl1=0 benzodiazepine1=0 naltrexone1=0 antidepressant1=0
+antipsychotic1=0 op_lax1=0 nat_opioid1=0 syn_opioid1=0 semi_opioid1=0 op_benz=0 op_dep=0 op_psy=0 op_lax_c=0 opioid_days=0
+bad_pot1=0 good_pot1=0 barbiturate1=0 muscle1=0 morphine1=0 trinity=0 sud1=0 oud1=0 oudr1=0 adv1=0 od1=0 morphine_px1=0 treat1=0
+treat_rx1=0 hospice1=0 death1=0 cancer1=0 mh1=0 nas1=0 nas_mom1=0 mdc20=0 mdc19=0 mdc21=0 pcp1=0 ed1=0 bup_meth_nalt1=. ip1=.
+opioid=. naloxone=. buprenorphine=. methadone=. short_acting=. long_acting=. fentanyl=. benzodiazepine=. naltrexone=.
+antidepressant=. antipsychotic=. op_lax=. nat_opioid=. syn_opioid=. semi_opioid=. bad_pot=. good_pot=. barbiturate=. muscle=.
+bup_meth_nalt=. morphine=. sud=. oud=. oudr=. adv=. od=. hospice=. morphine_px=. treat=. treat_rx=. death=. cancer=. mh=. nas=.
+nas_mom=. pcp=. ed=. ip_op=  _ERROR_=1 _N_=2
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: SAS set option OBS=0 and will continue to check statements. This might cause NOTE: No observations in data set.
+NOTE: There were 3 observations read from the data set AMEX.CLAIM_TRIM.
+WARNING: The data set AMEX.CLAIMS_2015_1 may be incomplete.  When this step was stopped there were 1 observations and 49 variables.
+WARNING: Data set AMEX.CLAIMS_2015_1 was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.30 seconds
+      cpu time            0.27 seconds
+      
+
+541        %by_mbr(2016);
+
+WARNING: The variable age in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable sex in the DROP, KEEP, or RENAME list has never been referenced.
+NOTE: The data set AMEX.CLAIMS_2016_1 has 0 observations and 49 variables.
+WARNING: Data set AMEX.CLAIMS_2016_1 was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.01 seconds
+      
+
+542        %by_mbr(2017);
+
+WARNING: The variable age in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable sex in the DROP, KEEP, or RENAME list has never been referenced.
+NOTE: The data set AMEX.CLAIMS_2017_1 has 0 observations and 49 variables.
+WARNING: Data set AMEX.CLAIMS_2017_1 was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.00 seconds
+      
+
+543        
+544        * QA *;
+545        proc freq data=amex.claims2016_1;
+ERROR: File AMEX.CLAIMS2016_1.DATA does not exist.
+546          tables nat_opioid1  * semi_opioid1 * syn_opioid1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+547                 long_acting1  * short_acting1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+548            age sex opioid1 naloxone1 buprenorphine1 methadone1 short_acting1 long_acting1 fentanyl1 benzodiazepine1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+36                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+549            naltrexone1 antidepressant1 antipsychotic1 op_lax1 nat_opioid1 syn_opioid1 semi_opioid1 op_benz op_dep op_psy
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+550            op_lax_c good_pot1 bad_pot1 barbiturate1 muscle1 bup_meth_nalt1 morphine1 trinity
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+551            sud1 oud1 oudr1 adv1 od1 hospice1 morphine_px1 treat1 treat_rx1 death1 cancer1 mh1 nas1 nas_mom1 pcp1 ed1 ip1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+552        	oud1  * cancer1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+553        	oud1  * mh1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+554            oud1  * sud1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+555        	oud1  * oudr1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+556        	oud1  * adv1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+557        	oud1  * od1
+ERROR: No data set open to look up variables.
+37                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+ERROR: No data set open to look up variables.
+558        	oud1  * morphine_px1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+559        	oud1  * treat1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+560        	oud1  * treat_rx1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+561        	oud1  * nas_mom1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+562        	oud1  * hospice1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+563        	oudr1 * treat1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+564        	oudr1 * treat_rx1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+565        	od1   * mh1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+566        	od1   * treat1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+567        	od1   * treat_rx1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+568        	od1   * morphine_px1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+569        	od1   * death1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+570        	od1   * nas_mom1
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+571        	mdc20
+ERROR: No data set open to look up variables.
+572        	mdc19
+ERROR: No data set open to look up variables.
+573        	mdc21
+ERROR: No data set open to look up variables.
+574            oud1 * mdc20
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+575            od1  * mdc21
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+576            mh1  * mdc19 / missprint;
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+577        run;
+
+38                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+
+578        proc freq data=amex.claims2016_1;
+ERROR: File AMEX.CLAIMS2016_1.DATA does not exist.
+579          where opioid1 > 0;
+WARNING: No data sets qualify for WHERE processing.
+580          tables opioid_days age sex / missprint;
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+ERROR: No data set open to look up variables.
+581        run;
+
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+582        
+583        ** claims **;
+584        * How many members have claims? *;
+
+
+585        proc sort data=amex.claims out = clm_mbrs (keep = enrolid) nodupkey; by enrolid; run;
+
+NOTE: The data set WORK.CLM_MBRS has 0 observations and 0 variables.
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.41 seconds
+      cpu time            0.40 seconds
+      
+
+586        
+587        * Admissions - only place to get ICD-10 procedure code - but this is only for opioid treatment px and not using now *;
+588        
+589        ** Export .csv files **;
+590        %macro exp(dset);
+591          proc export data=amex.&dset
+592            outfile = "/ace/AMEX_2018/Data/&dset..csv"
+593            dbms = dlm replace;
+594            delimiter = ',';
+595            putnames = yes;
+596          run;
+597        %mend exp;
+598        * All years *;
+599        %exp(elig_trim);
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+NOTE: The SAS System stopped processing this step because of errors.
+600        %exp(claims2015);
+
+
+NOTE: PROCEDURE EXPORT used (Total process time):
+39                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+NOTE: The SAS System stopped processing this step because of errors.
+601        %exp(claims2016);
+
+
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+NOTE: The SAS System stopped processing this step because of errors.
+602        %exp(claims2017);
+
+
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+NOTE: The SAS System stopped processing this step because of errors.
+603        %exp(claims2015_1);
+
+
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+NOTE: The SAS System stopped processing this step because of errors.
+604        %exp(claims2016_1);
+
+
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+NOTE: The SAS System stopped processing this step because of errors.
+605        %exp(claims2017_1);
+
+
+NOTE: PROCEDURE EXPORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+NOTE: The SAS System stopped processing this step because of errors.
+606        
+607        ** Find first opioid rx in 2016 **;
+
+
+608        data rx_first (drop = gt7d le7d semi_opioid syn_opioid nat_opioid);
+609          set amex.claims2016 (keep = enrolid generid svcdate opioid gt7d le7d semi_opioid syn_opioid nat_opioid);
+610          if opioid = 1;
+611          nat_gt7d = 0;
+612          syn_gt7d = 0;
+613          nat_le7d = 0;
+614          syn_le7d = 0;
+615          if gt7d then do;
+616            if nat_opioid = 1 or semi_opioid = 1 then nat_gt7d = 1;
+617            if syn_opioid = 1                    then syn_gt7d = 1;
+40                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+618          end;
+619          else if le7d = 1 then do;
+620            if nat_opioid = 1 or semi_opioid = 1 then nat_le7d = 1;
+621            if syn_opioid = 1                    then syn_le7d = 1;
+622          end;
+623        run;
+
+NOTE: The data set WORK.RX_FIRST has 0 observations and 8 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+624        proc freq data=rx_first; tables nat_gt7d syn_gt7d nat_le7d syn_le7d / missprint; run;
+
+NOTE: PROCEDURE FREQ used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+625        proc sort data=rx_first; by enrolid svcdate; run;
+
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+626        data rx_first;
+627          set rx_first (drop = opioid);
+628          by enrolid svcdate;
+629          if first.enrolid;
+630        run;
+
+NOTE: The data set WORK.RX_FIRST has 0 observations and 7 variables.
+WARNING: Data set WORK.RX_FIRST was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+631        ** Check prior opioid rx dates in 2015 **;
+632        data rx_last(keep = enrolid svcdate);
+633          set amex.claims2015 (where = (opioid = 1));
+634        run;
+
+NOTE: The data set WORK.RX_LAST has 0 observations and 2 variables.
+NOTE: DATA statement used (Total process time):
+      real time           0.08 seconds
+      cpu time            0.07 seconds
+      
+
+635        proc sort data=rx_last; by enrolid svcdate; run;
+
+NOTE: PROCEDURE SORT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+41                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+636        data rx_last;
+637          set rx_last;
+638          by enrolid svcdate;
+639          if last.enrolid;
+640        run;
+
+NOTE: The data set WORK.RX_LAST has 0 observations and 2 variables.
+WARNING: Data set WORK.RX_LAST was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.01 seconds
+      
+
+641        proc sql;
+642          create table amex.new_users2016 as
+643          select a.*, b.svcdate as prior_rx
+644          from rx_first as a left join rx_last as b
+645          on a.enrolid = b.enrolid;
+WARNING: Data set AMEX.NEW_USERS2016 was not replaced because of NOREPLACE option.
+WARNING: Data set AMEX.NEW_USERS2016 was not replaced because of NOREPLACE option.
+
+646        quit;
+NOTE: PROCEDURE SQL used (Total process time):
+      real time           0.02 seconds
+      cpu time            0.00 seconds
+      
+
+647        data amex.new_users2016;
+648          set amex.new_users2016;
+649          lag = svcdate - prior_rx;
+650        run;
+
+NOTE: The data set AMEX.NEW_USERS2016 has 0 observations and 8 variables.
+WARNING: Data set AMEX.NEW_USERS2016 was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.03 seconds
+      cpu time            0.01 seconds
+      
+
+651        proc print data=amex.new_users2016 (obs = 5); title "New opioid users 2016"; run;
+
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+652        proc means data=amex.new_users2016; title "Opioid lags 2016"; var lag; run;
+ERROR: Variable LAG not found.
+
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: PROCEDURE MEANS used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+653        
+654        * Use 6 month (>180 days) threshold *;
+
+
+42                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+655        data amex.new_users2016 (keep = enrolid svcdate nat_gt7d syn_gt7d nat_le7d syn_le7d);
+656          set amex.new_users2016 (where = (lag = . or lag > 180));
+ERROR: Variable lag is not on file AMEX.NEW_USERS2016.
+657        run;
+
+WARNING: The variable enrolid in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable svcdate in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable nat_gt7d in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable syn_gt7d in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable nat_le7d in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable syn_le7d in the DROP, KEEP, or RENAME list has never been referenced.
+NOTE: The SAS System stopped processing this step because of errors.
+WARNING: The data set AMEX.NEW_USERS2016 may be incomplete.  When this step was stopped there were 0 observations and 0 variables.
+WARNING: Data set AMEX.NEW_USERS2016 was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.01 seconds
+      
+
+
+658        
+659        ** Remove cancer & hospice (anytime) - 6 month clean for Rx **;
+660        data amex.new_users2016;
+661          merge amex.new_users2016 (in=nin)
+662                amex.claims2017_1 (in=xinp1 keep = enrolid cancer1 hospice1 rename = (cancer1 = cancerp1 hospice1 = hospicep1))
+663                amex.claims2016_1 (in=xin0  keep = enrolid cancer1 hospice1)
+664                amex.claims2015_1 (in=xinm1 keep = enrolid cancer1 hospice1 rename = (cancer1 = cancerm1 hospice1 = hospicem1));
+ERROR: File AMEX.CLAIMS2017_1.DATA does not exist.
+ERROR: File AMEX.CLAIMS2016_1.DATA does not exist.
+ERROR: File AMEX.CLAIMS2015_1.DATA does not exist.
+665          by enrolid;
+666          if nin;
+667          if cancer1  = 1 or cancerp1  = 1 or cancerm1  = 1 then cancer  = 1; else cancer  = 0;
+668          if hospice1 = 1 or hospicep1 = 1 or hospicem1 = 1 then hospice = 1; else hospice = 0;
+669          if cancer or hospice then drp = 1; else drp = 0;
+670        run;
+
+NOTE: The SAS System stopped processing this step because of errors.
+WARNING: The data set AMEX.NEW_USERS2016 may be incomplete.  When this step was stopped there were 0 observations and 15 variables.
+WARNING: Data set AMEX.NEW_USERS2016 was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+671        
+672        * Remove exclusions *;
+673        data amex.new_users2016  (keep = enrolid first_op nat_gt7d syn_gt7d nat_le7d syn_le7d);
+674          set amex.new_users2016 (where = (cancer = 0 & hospice = 0) rename = (svcdate = first_op));
+ERROR: Variable cancer is not on file AMEX.NEW_USERS2016.
+675        run;
+
+WARNING: The variable enrolid in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable first_op in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable nat_gt7d in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable syn_gt7d in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable nat_le7d in the DROP, KEEP, or RENAME list has never been referenced.
+WARNING: The variable syn_le7d in the DROP, KEEP, or RENAME list has never been referenced.
+43                                                         The SAS System                             14:27 Tuesday, August 21, 2018
+
+NOTE: The SAS System stopped processing this step because of errors.
+WARNING: The data set AMEX.NEW_USERS2016 may be incomplete.  When this step was stopped there were 0 observations and 0 variables.
+WARNING: Data set AMEX.NEW_USERS2016 was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           0.01 seconds
+      cpu time            0.00 seconds
+      
+
+676        proc print data=amex.new_users2016 (obs = 5); title "Exclusions Removed 2016"; run;
+
+NOTE: PROCEDURE PRINT used (Total process time):
+      real time           0.00 seconds
+      cpu time            0.00 seconds
+      
+
+677        
+678        
+
+ERROR: Errors printed on pages 31,32,34,35,36,37,38,41,42.
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           5:50.82
+      cpu time            1:32.57
+      

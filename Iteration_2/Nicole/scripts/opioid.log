@@ -1,0 +1,215 @@
+1                                        The WPS System       16:33 Wednesday, May  9, 2018     
+
+NOTE: (c) Copyright World Programming Limited 2002-2018.  All rights reserved.
+NOTE: World Programming System 4.00 (04.00.00.00.005993)
+      Licensed to IBM Watson Health, for evaluation purposes
+NOTE: This session is executing on the LINUX platform and is running in 64 bit mode
+
+WARNING: WPS will stop working in 2 days
+1         ** Import MarketScan .csv files as WPD for creation of analysis datasets **;
+2         ** for Opioid Predictive Models                                          **;
+3         ** N. Ridenour 4.25.18                                                   **;
+4         
+5         libname op wpd '/data/mscan/opioid';
+NOTE: Library op assigned as follows:
+      Engine:        WPD
+      Physical Name: /data/mscan/opioid
+
+6         
+7         %macro mcd(yr,ver);
+8           * Eligibility *;
+9           /*data op.medicaid_a_&yr._&ver;
+10            infile "/data/mscan/medicaid_a_&yr._&ver..csv" dlm = ',' missover dsd firstobs = 2
+10      !  lrecl = 33000;
+11            format mcasenum $16. boe $30.;
+12            input SEQNUM ENROLID MCASENUM $ DOBYR VERSION $ YEAR MEMDAYS STDRACE $ SEX $ ENRMO
+12      ! N
+13              ENRIND1 ENRIND2 ENRIND3 ENRIND4 ENRIND5 ENRIND6 ENRIND7 ENRIND8 ENRIND9 ENRIND10
+13      !  ENRIND11 ENRIND12
+14              MEMDAY1 MEMDAY2 MEMDAY3 MEMDAY4 MEMDAY5 MEMDAY6 MEMDAY7 MEMDAY8 MEMDAY9 MEMDAY10
+14      !  MEMDAY11 MEMDAY12
+15              PLNTYP1 PLNTYP2 PLNTYP3 PLNTYP4 PLNTYP5 PLNTYP6 PLNTYP7 PLNTYP8 PLNTYP9 PLNTYP10
+15      !  PLNTYP11 PLNTYP12
+16              BOE $ CAP $ DRUGCOVG $ MAS $ MEDICARE $ MHSACOVG $;
+17          run;
+18          * Pharmacy *;
+19          data op.medicaid_d_&yr._&ver;
+20            infile "/data/mscan/medicaid_d_&yr._&ver..csv" dlm = ',' missover dsd firstobs = 2
+20      !  lrecl = 33000;
+21            informat 'SVCDATE'n 'PDDATE'n MMDDYY10.;
+22            format mcasenum $16. boe pharm_id $30. 'SVCDATE'n 'PDDATE'n MMDDYY10.;
+23            input SEQNUM ENROLID MCASENUM $ DOBYR DRUGCOVG $ MHSACOVG $ PLANTYP BOE $ CAP MAS 
+23      ! MEDICARE VERSION $
+24              YEAR AWP COB COINS COPAY DEDUCT DAWIND DISPFEE INGCOST QTY REFILL SVCDATE DAYSUP
+24      ! P GENERID METQTY
+25              NDCNUM NETPAY PAY PDDATE THERCLS STDRACE DEACLAS MAINTIN SEX THERGRP GENIND PHAR
+25      ! M_ID;
+26           run;
+27           %if &yr = 2015 %then %do;
+28             data op.medicaid_i_&yr._&ver;
+29               infile  "/data/mscan/medicaid_i_&yr._&ver..csv" dlm = ',' missover dsd firstobs
+29      !  = 2 lrecl = 33000;
+30               informat 'DISDATE'n 'ADMDATE'n 'PDDATE'n MMDDYY10.;
+31               format mcasenum $16. boe $30. 'DISDATE'n 'ADMDATE'n 'PDDATE'n MMDDYY10.;
+32               input SEQNUM ENROLID MCASENUM $ DOBYR DRUGCOVG $ MHSACOVG $ PLANTYP BOE $ CAP $
+32      !  MAS $ MEDICARE $ VERSION $ YEAR DISDATE
+2                                        The WPS System       16:33 Wednesday, May  9, 2018     
+
+33                 TOTCOB TOTCOINS TOTCOPAY TOTDED ADMDATE CASEID DAYS DRG HOSPNET HOSPPAY PDDAT
+33      ! E DXVER PDX $ PHYSNET PHYSPAY PPROC $
+34                 TOTNET TOTPAY STDRACE ADMTYP $ MDC $ SEX DSTATUS $ DX1 $ DX2 $ DX3 $ DX4 $ DX
+34      ! 5 $ DX6 $ DX7 $ DX8 $ DX9 $ DX10 $ DX11 $
+35                 DX12 $ DX13 $ DX14 $ DX15 $ PROC1 $ PROC2 $ PROC3 $ PROC4 $ PROC5 $ PROC6 $ P
+35      ! ROC7 $ PROC8 $ PROC9 $ PROC10 $
+36                 PROC11 $ PROC12 $ PROC13 $ PROC14 $ PROC15 $ HOSP_ID $ PHYS_ID $;
+37            %end;
+38            %else %if &yr = 2016 %then %do;
+39             data op.medicaid_i_&yr._&ver;
+40               infile  "/data/mscan/medicaid_i_&yr._&ver..csv" dlm = ',' missover dsd firstobs
+40      !  = 2 lrecl = 33000;
+41               informat 'DISDATE'n 'ADMDATE'n 'PDDATE'n MMDDYY10.;
+42               format mcasenum $16. boe $30. 'DISDATE'n 'ADMDATE'n 'PDDATE'n MMDDYY10.;
+43               input SEQNUM ENROLID MCASENUM $ DOBYR DRUGCOVG $ MHSACOVG $ PLANTYP BOE $ CAP $
+43      !  MAS $ MEDICARE $ VERSION $ YEAR DISDATE
+44                 TOTCOB TOTCOINS TOTCOPAY TOTDED ADMDATE CASEID DAYS DRG HOSPNET HOSPPAY PDDAT
+44      ! E DXVER PDX $ PHYSNET PHYSPAY PPROC $
+45                 TOTNET TOTPAY STDRACE ADMTYP $ MDC $ SEX DSTATUS $ DX1 $ DX2 $ DX3 $ DX4 $ DX
+45      ! 5 $ DX6 $ DX7 $ DX8 $ DX9 $ DX10 $ DX11 $
+46                 DX12 $ DX13 $ DX14 $ DX15 $ PROC1 $ PROC2 $ PROC3 $ PROC4 $ PROC5 $ PROC6 $ P
+46      ! ROC7 $ PROC8 $ PROC9 $ PROC10  $
+47        	     PROC11 $ PROC12 $ PROC13 $ PROC14 $ PROC15 $ HOSP_ID $ PHYS_ID $;
+48            %end;
+49            %else %do;	
+50        	  data op.medicaid_i_&yr._&ver;
+51                infile  "/data/mscan/medicaid_i_&yr._&ver..csv" dlm = ',' missover dsd firstob
+51      ! s = 2 lrecl = 33000;
+52                informat 'DISDATE'n 'ADMDATE'n 'PDDATE'n MMDDYY10.;
+53                format mcasenum $16. boe $30. 'DISDATE'n 'ADMDATE'n 'PDDATE'n MMDDYY10.;
+54                input SEQNUM ENROLID MCASENUM $ DOBYR DRUGCOVG $ MHSACOVG $ PLANTYP BOE $ CAP 
+54      ! $ MAS $ MEDICARE $ VERSION $ YEAR DISDATE
+55                  TOTCOB TOTCOINS TOTCOPAY TOTDED ADMDATE CASEID DAYS DRG HOSPNET HOSPPAY PDDA
+55      ! TE PDX $ PHYSNET PHYSPAY PPROC $
+56                  TOTNET TOTPAY STDRACE ADMTYP $ MDC $ SEX DSTATUS $ DX1 $ DX2 $ DX3 $ DX4 $ D
+56      ! X5 $ DX6 $ DX7 $ DX8 $ DX9 $ DX10 $ DX11 $
+57                  DX12 $ DX13 $ DX14 $ DX15 $ PROC1 $ PROC2 $ PROC3 $ PROC4 $ PROC5 $ PROC6 $ 
+57      ! PROC7 $ PROC8 $ PROC9 $ PROC10  $
+58        	      PROC11 $ PROC12 $ PROC13 $ PROC14 $ PROC15 $ HOSP_ID $ PHYS_ID $;
+59        	  run;
+60        	%end;
+61        	%if &yr = 2013 or &yr = 2014 %then %do;
+62        	  data op.medicaid_o_&yr._&ver;
+63                  infile  "/data/mscan/medicaid_o_&yr._&ver..csv" dlm = ',' missover dsd first
+63      ! obs = 2 lrecl = 33000;
+64                  informat 'SVCDATE'n 'PDDATE'n 'TSVCDAT'n MMDDYY10.;
+65                  format mcasenum $16. boe $30. 'SVCDATE'n 'PDDATE'n 'TSVCDAT'n MMDDYY10.;
+66                  input SEQNUM ENROLID MCASENUM $ DOBYR DRUGCOVG $ MHSACOVG $ PLANTYP BOE $ CA
+66      ! P $ MAS $ MEDICARE $ VERSION $
+67                  YEAR COB COINS COPAY DEDUCT NETPAY PAY FACHDID FACPROF $ REVCODE $ DX1 $ DX2
+67      !  $ PROC1 $ PROCTYP $ SEX SVCDATE
+68                  DX3 $ DX4 $ PDDATE PROCGRP QTY SVCSCAT $ TSVCDAT STDRACE MDC $ STDPLAC STDPR
+68      ! OV DENTAL $ STDSVC PROV_ID $;
+3                                        The WPS System       16:33 Wednesday, May  9, 2018     
+
+69        	    run;
+70        	 %end;
+71        	 %else %do;
+72        	   data op.medicaid_o_&yr._&ver;
+73                  infile  "/data/mscan/medicaid_o_&yr._&ver..csv" dlm = ',' missover dsd first
+73      ! obs = 2 lrecl = 33000;
+74                  informat 'SVCDATE'n 'PDDATE'n 'TSVCDAT'n MMDDYY10.;
+75                  format mcasenum $16. boe $30. 'SVCDATE'n 'PDDATE'n 'TSVCDAT'n MMDDYY10.;
+76                  input SEQNUM ENROLID MCASENUM $ DOBYR DRUGCOVG $ MHSACOVG $ PLANTYP BOE $ CA
+76      ! P $ MAS $ MEDICARE $ VERSION $
+77                  YEAR COB COINS COPAY DEDUCT NETPAY PAY FACHDID FACPROF $ REVCODE $ DX1 $ DX2
+77      !  $ DXVER $ PROC1 $ PROCTYP $ SEX SVCDATE
+78                  DX3 $ DX4 $ PDDATE PROCGRP QTY SVCSCAT $ TSVCDAT STDRACE MDC $ STDPLAC STDPR
+78      ! OV DENTAL $ PROV_ID $ MSCLMID NPI $ UNITS;
+79        	    run;
+80        	 %end;
+81        	
+82        	 %if &yr = 2013 or &yr = 2014 %then %do;
+83        	  data op.medicaid_s_&yr._&ver;
+84                  infile  "/data/mscan/medicaid_s_&yr._&ver..csv" dlm = ',' missover dsd first
+84      ! obs = 2 lrecl = 32760;
+85                  informat 'SVCDATE'n 'PDDATE'n 'TSVCDAT'n 'ADMDATE'n 'DISDATE'n MMDDYY10.;
+86                  format mcasenum $16. boe $30. 'SVCDATE'n 'PDDATE'n 'TSVCDAT'n 'ADMDATE'n 'DI
+86      ! SDATE'n MMDDYY10.;
+87                  input SEQNUM DISDATE CASEID DRG PDX $ PPROC $ ADMTYP MDC $ ENROLID MCASENUM 
+87      ! $ DOBYR DRUGCOVG $ MHSACOVG $
+88        	            PLANTYP BOE $ CAP MAS MEDICARE VERSION YEAR COB COINS COPAY DEDUCT NETPAY
+88      !  PAY FACHDID FACPROF $
+89        				REVCODE $ DX1 $ DX2 $ PROC1 $ PROCTYP $ SEX $ DX3 $ DX4 $ PDDATE QTY SVCSCAT $ SVC
+89      ! DATE TSVCDAT STDRACE
+90        				ADMDATE DSTATUS STDPLAC STDPROV STDSVC PROV_ID $;
+91              run;
+92              %end;
+93        	  %else %do;*/
+94        	   data op.medicaid_s_&yr._&ver;
+95                  infile  "/data/mscan/medicaid_s_&yr._&ver..csv" dlm = ',' missover dsd first
+95      ! obs = 2 lrecl = 32760;
+96                  informat 'SVCDATE'n 'PDDATE'n 'TSVCDAT'n 'DISDATE'n 'ADMDATE'n MMDDYY10.;
+97                  format mcasenum $16. boe $30. 'SVCDATE'n 'PDDATE'n 'TSVCDAT'n 'DISDATE'n 'AD
+97      ! MDATE'n MMDDYY10.;
+98        		  input SEQNUM DISDATE CASEID DRG PDX $ PPROC $ ADMTYP MDC $ ENROLID MCASENUM $ DOBY
+98      ! R DRUGCOVG $ MHSACOVG $
+99        				PLANTYP BOE $ CAP MAS MEDICARE VERSION YEAR COB COINS COPAY DEDUCT NETPAY PAY FACH
+99      ! DID FACPROF $
+100       				REVCODE $ DX1 $ DX2 $ DXVER $ PROC1 $ PROCTYP $ SEX $ DX3 $ DX4 $ PDDATE QTY SVCSC
+100     ! AT $ SVCDATE
+101       				TSVCDAT STDRACE ADMDATE DSTATUS STDPLAC STDPROV PROV_ID $ MSCLMID NPI $ UNITS;
+102               run;
+103             %end;
+                ^
+ERROR: There is no matching %DO statement for the %END; the statement will be ignored
+104       	
+105       	    /*proc import datafile = '/data/mscan/medicaid_s_2015_v2.csv' out = op.medicaid_s
+4                                        The WPS System       16:33 Wednesday, May  9, 2018     
+
+105     ! _2015_v2 dbms = CSV; run;*/
+106       	
+107       %mend mcd;
+108       *%mcd(2013,v4);
+109       *%mcd(2014,v2);
+110       %mcd(2015,v2);
+
+NOTE: The file '/data/mscan/medicaid_s_2015_v2.csv' is:
+      File Name=/data/mscan/medicaid_s_2015_v2.csv,
+      Access Permissions=-rwxrwxrwx, Number of Links=1,
+      Owner Name=u0112740, Group Name=u0112740,
+      File Size=11575346993, Last Modified=16:22:24 Apr 16 2018,
+      Created=10:48:23 Apr 17 2018, Lrecl=32760, Recfm=V
+
+NOTE: 45465112 records were read from file '/data/mscan/medicaid_s_2015_v2.csv'
+      The minimum record length was 206
+      The maximum record length was 301
+NOTE: Data set "OP.medicaid_s_2015_v2" has 45465112 observation(s) and 51 variable(s)
+NOTE: The data step took :
+      real time : 7:03.632
+      cpu time  : 6:58.517
+
+
+111       %mcd(2016,v1);
+
+NOTE: The file '/data/mscan/medicaid_s_2016_v1.csv' is:
+      File Name=/data/mscan/medicaid_s_2016_v1.csv,
+      Access Permissions=-rwxrwxrwx, Number of Links=1,
+      Owner Name=u0112740, Group Name=u0112740,
+      File Size=12196834140, Last Modified=16:23:11 Apr 16 2018,
+      Created=10:49:33 Apr 17 2018, Lrecl=32760, Recfm=V
+
+NOTE: 47134427 records were read from file '/data/mscan/medicaid_s_2016_v1.csv'
+      The minimum record length was 209
+      The maximum record length was 303
+NOTE: Data set "OP.medicaid_s_2016_v1" has 47134427 observation(s) and 51 variable(s)
+NOTE: The data step took :
+      real time : 7:14.447
+      cpu time  : 7:10.071
+
+
+112       
+113       
+ERROR: Error printed on page 3
+
+NOTE: Submitted statements took :
+      real time : 14:18.194
+      cpu time  : 14:08.690
