@@ -12,7 +12,7 @@ import numpy as np
 
 # Eligibility, rename the columns such that it aligns with Nicole's SAS code
 df = pd.read_csv('/Users/yuchenli/Box Sync/Yuchen_project/'\
-                 'Risk_of_opioid_dependence_AMEX_pilot/Data/'\
+                 'Opioid_progression/Iteration_2/Data/'\
                  'amex_opioid_elig_1212278.csv', sep = ',',
                  index_col = False, header = None, dtype = np.str,
                  encoding = 'utf-8')
@@ -43,14 +43,14 @@ df.columns = ['year',
             'table']
 
 df.to_csv('/Users/yuchenli/Box Sync/Yuchen_project/'\
-          'Risk_of_opioid_dependence_AMEX_pilot/Data/'\
+          'Opioid_progression/Iteration_2/Data/'\
           'amex_opioid_elig_1212278_with_column_names.csv', encoding = 'utf-8',
           index = False)
 
 
 # Claims
 df = pd.read_csv('/Users/yuchenli/Box Sync/Yuchen_project/'\
-                 'Risk_of_opioid_dependence_AMEX_pilot/Data/'\
+                 'Opioid_progression/Iteration_2/Data/'\
                  'amex_opioid_claims_1212277.csv', sep = ',',
                  index_col = False, header = None, encoding = 'utf-8',
                  dtype = np.str)
@@ -70,7 +70,7 @@ df.columns = ['year_paid',
             'netpay',
             'paid_in_ntwk_ind',
             'ntwk_prov_ind',
-            'coins+copay+deduct',
+            'coins_copay_deduct',
             'coins',
             'copay',
             'deduct',
@@ -120,7 +120,7 @@ df.columns = ['year_paid',
 
 # Read redbook
 redbook  = pd.read_csv('/Users/yuchenli/Box Sync/Yuchen_project/'
-                             'Risk_of_opioid_dependence_AMEX_pilot/Nicole/'
+                             'Opioid_progression/Iteration_2/Nicole/'
                              'data/redbook.csv', sep = ',',
                  index_col = False, encoding = 'utf-8',
                  dtype = np.str)
@@ -145,14 +145,14 @@ for i in range(len(df)):
 df['GENERID'] = GENERID_list
 
 df.to_csv('/Users/yuchenli/Box Sync/Yuchen_project/'\
-          'Risk_of_opioid_dependence_AMEX_pilot/Data/'\
+          'Opioid_progression/Iteration_2/Data/'\
           'amex_opioid_claims_1212277_with_GENERID.csv', encoding = 'utf-8',
           index = False, header = False)
 
 
 # Admission
 df = pd.read_csv('/Users/yuchenli/Box Sync/Yuchen_project/'\
-                 'Risk_of_opioid_dependence_AMEX_pilot/Data/'\
+                 'Opioid_progression/Iteration_2/Data/'\
                  'amex_opioid_admit_1212284.csv', sep = ',',
                  index_col = False, header = None, encoding = 'utf-8',
                  dtype = np.str)
@@ -175,14 +175,14 @@ df.columns = ['year',
             'table']
 
 df.to_csv('/Users/yuchenli/Box Sync/Yuchen_project/'\
-          'Risk_of_opioid_dependence_AMEX_pilot/Data/'\
+          'Opioid_progression/Iteration_2/Data/'\
           'amex_opioid_admit_1212284_with_column_names.csv', encoding = 'utf-8',
           index = False)
 
 
 # Episode
 df = pd.read_csv('/Users/yuchenli/Box Sync/Yuchen_project/'\
-                 'Risk_of_opioid_dependence_AMEX_pilot/Data/'\
+                 'Opioid_progression/Iteration_2/Data/'\
                  'amex_opioid_epis_1212285.csv', sep = ',',
                  index_col = False, header = None, encoding = 'utf-8',
                  dtype = np.str)
@@ -224,16 +224,16 @@ df.columns = ['year',
             'table']
 
 df.to_csv('/Users/yuchenli/Box Sync/Yuchen_project/'\
-          'Risk_of_opioid_dependence_AMEX_pilot/Data/'\
+          'Opioid_progression/Iteration_2/Data/'\
           'amex_opioid_epis_1212285_with_column_names.csv', encoding = 'utf-8',
           index = False)
 
 
 # Read random sas7bdat file
 df = pd.read_sas('/Users/yuchenli/Box Sync/Yuchen_project/'
-                 'Risk_of_opioid_dependence_AMEX_pilot/SAS/elig.sas7bdat')
+                 'Opioid_progression/Iteration_2/SAS/elig.sas7bdat')
 
 
 df = pd.read_sas('/Users/yuchenli/Box Sync/Yuchen_project/'
-                 'Risk_of_opioid_dependence_AMEX_pilot/SAS/'
+                 'Opioid_progression/Iteration_2/SAS/'
                  'opioid_vs_2017.sas7bdat')

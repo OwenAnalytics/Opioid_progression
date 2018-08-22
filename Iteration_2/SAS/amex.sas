@@ -178,17 +178,17 @@ run;
 * Claims: Medical/Pharmacy *;
 * Note: Rx does not have generid which is how we classify Rx *;
 data amex.claims;
-  infile "/ace/AMEX_2018/Data/amex_opioid_claims_1212277.csv" dlm = ',' missover dsd firstobs = 2 lrecl = 700;
+  infile "/ace/AMEX_2018/Data/amex_opioid_claims_1212277_with_GENERID.csv" dlm = ',' missover dsd firstobs = 2 lrecl = 700;
   informat 'svcdate'n 'tsvcdat'n 'paiddt'n MMDDYY10.;
-  format 'svcdate'n 'tsvcdat'n 'paiddt'n MMDDYY10. enrolid $20. claim_id mdst_prov_type $30. ndcnum $11. dtl_ther_class_cd npi_id $10. 
+  format 'svcdate'n 'tsvcdat'n 'paiddt'n MMDDYY10. enrolid $20. claim_id mdst_prov_type $30. ndcnum $11. dtl_ther_class_cd npi $10.
 		 prov_id $25. prov_name std_hosp ord_prov_name $70. prov_id $25. epi_id $30. adm_id $16. mdst_place_grp_cd table $12.;
   input year_paid $ enrolid $ employer_cd $ claim_id $ line_nbr svcdate tsvcdat dstatus $ cap_svc_ind $ paiddt
-  		pay chg netpay paid_in_ntwk_ind $ ntwk_prov_ind $ coins copay deduct proc1 $
+  		pay chg netpay paid_in_ntwk_ind $ ntwk_prov_ind $ out_of_pocket coins copay deduct proc1 $
 		proc_system_cd $ proc_cat_cd $ procgrp $ dxcat $ clincond $ dx1 $ dx2 $ dx3 $ dx4 $
 		dx5 $ dx6 $ dx7 $ dx8 $ dx9 $ dx10 $ dxver $ drg $ svcscat $ mdst_svc_subcat_cd $
-		mdc $ ndcnum $ dtl_ther_class_cd $ int_ther_class_cd stdplac $ prov_id $ mdst_prov_type_cd $ stdprov $ npi $
+		mdc $ ndcnum $ dtl_ther_class_cd $ int_ther_class_cd stdplac $ prov_id $ mdst_prov_type $ stdprov $ npi $
 		prov_name $ std_hosp $ ord_prov $ ord_prov_name $ daysupp rx_refill_nbr compound_cd $ epi_id $ adm_id $ revcode $ 
-		rb_flag $ mdst_place_grp_cd $ table $;
+		rb_flag $ mdst_place_grp_cd $ table $ generid;
  run; 
 
  * Not using this yet *;
@@ -227,7 +227,7 @@ run;
 proc freq data= amex.claims;
   title 'Am Ex: Claims - Med/Rx';
   tables year_paid employer_cd svcdate dstatus cap_svc_ind paid_in_ntwk_ind ntwk_prov_ind proc1 proc_system_cd proc_cat_cd procgrp 
-         dxcat clincond dx1 dxver drg svcscat mdst_svc_subcat_cd mdc dtl_ther_class_cd int_ther_class_cd stdplac mdst_prov_type_cd 
+         dxcat clincond dx1 dxver drg svcscat mdst_svc_subcat_cd mdc dtl_ther_class_cd int_ther_class_cd stdplac mdst_prov_type
          stdprov std_hosp revcode rb_flag mdst_place_grp_cd table / missprint;
 run;
 proc means data=amex.claims;
