@@ -428,15 +428,16 @@ quit;
 %claims(2017);
 
 * QA *;
-proc freq data=amex.claims2016
-  title "American Express: Claims 2016";
+proc freq data=amex.claims2016;
+  title 'American Express: Claims 2016';
   tables opioid naloxone buprenorphine methadone short_acting long_acting fentanyl benzodiazepine naltrexone antidepressant 
-      antipsychotic op_lax nat_opioid syn_opioid semi_opioid muscle bup_meth_nalt morphine deaclas 
+      antipsychotic op_lax nat_opioid syn_opioid semi_opioid muscle bup_meth_nalt morphine
       opioid * gt7d 
       opioid * le7d 
       dxcat mdc sud oud oudr adv od morphine_px treat treat_rx nas mh cancer hospice death mal_neo oth_neo 
       hx_neo nas nas_mom pcp ed/ missprint;
 run;
+
 * Summarize by member *;
 * Assumes sorted by svcdate, so age will be age at last Rx *;
 %macro by_mbr(yr);
